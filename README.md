@@ -11,3 +11,9 @@
     - Visit the Labs folder for lab files (.Rmd and .pdf).
     
     - Visit Case Studies folder for case study files.
+
+- Textbook: Probability and Bayesian Modeling (1st Edition), Albert and Hu, Chapman & Hall/CRC Texts in Statistical Science.
+
+    - [Book website](https://monika76five.github.io/ProbBayes/)
+    
+    - [CRC Page for the Book](https://www.crcpress.com/Probability-and-Bayesian-Modeling/Albert-Hu/p/book/9781138492561)
