@@ -24,3 +24,8 @@
     devtools::install_github("bayesball/ProbBayes")
     require(ProbBayes)
     ```
+- Pre-requisites
+
+    - Multivariate Calculus
+    - Linear Algebra
+    - Probability 
