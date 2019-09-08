@@ -35,14 +35,14 @@
         - Intermediate R: [DataCamp link](https://www.datacamp.com/courses/intermediate-r)
         - Introduction to the Tidyverse: [DataCamp link](https://www.datacamp.com/courses/introduction-to-the-tidyverse)
 
-- The Fall 2019 iteration of MATH 347 Bayesian Statistics at Vassar College, NY:
+- Teaching and learning material (Fall 2019 iteration MATH 347 Bayesian Statistics at Vassar College, NY)
 
     - Lecture recordings available at [this growing YouTube playlist](https://www.youtube.com/playlist?list=PL_lWxa4iVNt1TfbsAfv9aW_5KL9rZuAtr).
     
-    - Visit the Lectures folder for lecture files (.Rmd and .pdf).
+    - Lectures folder: lecture files (.Rmd and .pdf).
     
-    - Visit the Homework folder for homework files (.tex and .pdf).
+    - Homework folder: homework files (.tex and .pdf).
     
-    - Visit the Labs folder for lab files (.Rmd and .pdf).
+    - Labs folder: lab files (.Rmd and .pdf).
     
-    - Visit Case Studies folder for case study files.
+    - Case Studies folder: case study files.
