@@ -26,6 +26,8 @@
     ```
 - Pre-requisites
 
-    - Multivariate Calculus
-    - Linear Algebra
-    - Probability 
+    - Coursework: Multivariate Calculus, Linear Algebra, Probability 
+    - Computing in R: equivalent to DataCamp's
+        - Introduction to R
+        - Intermediate R
+        - Introduction to the Tidyverse
