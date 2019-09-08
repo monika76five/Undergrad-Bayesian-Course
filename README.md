@@ -18,17 +18,31 @@
     
     - [CRC Page for the Book](https://www.crcpress.com/Probability-and-Bayesian-Modeling/Albert-Hu/p/book/9781138492561)
 
-- The ProbBayes R package
+- Computing resources
+
+    - The ProbBayes R package
     
     ```{r, eval = FALSE}
     devtools::install_github("bayesball/ProbBayes")
     require(ProbBayes)
     ```
+    
+    - JAGS (Just Another Gibbs Sampler)
+    
+        - Downloading and installing: [link](https://sourceforge.net/projects/mcmc-jags/files/JAGS/4.x/)
+        
+        - The runjags R package
+        ```{r, eval = FALSE}
+        install.packages("runjags")
+        require(runjags)
+        ```
+    
 - Pre-requisites
 
     - Coursework: Multivariate Calculus, Linear Algebra, Probability (college-level)
     
     - Computing in R: equivalent to DataCamp's
+    
         - Introduction to R
         - Intermediate R
         - Introduction to the Tidyverse
