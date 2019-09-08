@@ -27,7 +27,7 @@
     
 - Pre-requisites
 
-    - Coursework: Multivariate Calculus, Linear Algebra, Probability (college-level)
+    - Coursework: college-level Multivariate Calculus, Linear Algebra, and Probability
     
     - Computing in R: equivalent to DataCamp's
     
