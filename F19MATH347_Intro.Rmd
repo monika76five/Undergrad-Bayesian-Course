@@ -1,0 +1,873 @@
+---
+title: Introduction
+author: Jingchen (Monika) Hu 
+institute: Vassar College
+date: MATH 347 Bayesian Statistics
+output:
+  beamer_presentation:
+    includes:
+      in_header: ../LectureStyle.tex
+slide_level: 2
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Outline
+
+\tableofcontents[hideallsubsections]
+
+
+# Course orientation
+## General info
+\begin{tabular}{ p{2cm} p{8cm} }
+{\underline{Instructor:}}		& Jingchen (Monika) Hu - {jihu@vassar.edu} \\
+				& RH 403  \\
+				& \\	
+%{\underline{Stats Intern:}}		& Baian Liu (senior) -  \webLink{mailto:baliu@vassar.edu}{{baliu@vassar.edu}} \\
+%                & \\
+{\underline{Lecture:}}		&  Tuesdays and Thursdays 1:30-2:45pm \\
+                & OLB 105 \\
+				& \\
+{\underline{Lab:}}			& Some lectures will be used as labs.\\
+                & \\
+{\underline{Office hours:}} & Monday 4:00 - 5:00pm, Wednesday 10:30-11:30am \& 1:30-2:30pm, or by appointment. Separate online office hours for remote students. \\ 
+                & \\
+{\underline{TAs:}} & Dahlia Forte, Lucas Krishan, and Henrik Olsson \\ 
+                & \\
+\end{tabular}
+
+## Required materials
+
+\begin{tabular}{ p{2cm} p{8cm} }
+{\underline{Prerequisite:}} &  MATH 220 Multivariable Calculus , MATH 221 Linear Algebra and MATH 241 Probability.\\
+                & \\
+
+{\underline{Textbook:}} 	&  First Course in Bayesian Statistical Methods, by Hoff, P. (2010), Springer \\
+			& \\	
+{\underline{Software:}}    & We will use the software R/RStudio for labs and project. Download R from \href{http://www.r-project.org/}{\textit{http://www.r-project.org/}} and RStudio, from \href{https://www.rstudio.com/}{\textit{https://www.rstudio.com/}}. \\
+            & \\
+
+{\underline{Webpage:}} & Vassar's Moodle. It is your responsibility to check the site for homework, readings, and announcements. Also, check the tentative schedule (Google Docs) frequently for updates.\\
+\end{tabular}
+
+## Course topics
+
+This class is divided into three parts.
+
+- \underline{Inference}: Bayes theorem, conjugate prior, posterior distribution, HPD interval, predictive distribution, etc.  [Hoff Chapters 1, 2, 3, and 5]
+
+\pause
+
+- \underline{Computation}:
+    - Monte Carlo approximation [Hoff Chapter 4]
+    - Markov chain Monte Carlo (MCMC), Gibbs sampler, Metropolis-Hastings algorithm, MCMC diagnostics [Hoff Chapters 6, and 10]
+    - JAGS (R packages) for implementing MCMC [Additional material]
+
+\pause 
+
+- \underline{Applications}: Bayesian hierarchical modeling, Bayesian linear regression, latent class modeling, Bayesian time series modeling, Bayesian cognitive modeling etc. [Hoff Chapters 8, and 9, and additional material]
+
+\pause
+
+No strict boundaries between topics - they depend on each other.
+
+
+## Online/hybrid teaching and learning
+
+- \href{http://www.lacol.net/}{\textit{Liberal Arts Collaborative for Digital Innovation}} (LACOL) 10 schools
+
+- Course Share Project
+    - Goal: enrich upper level math/stats offering across 10 schools
+    \pause
+    - 2019 - 2020 Academic Year
+        - Fall 2019: Steve Miller (Williams College) \underline{Operations Research}
+        - Fall 2019: Monika Hu (Vassar College) \underline{Bayesian Statistics}
+        \pause
+        
+- Our course MATH 347 Bayesian Statistics:
+    - Fall 2017: 16 Vassar students + 1 Swarthmore student
+    - Spring 2019: 16 Vassar students + 1 Amherst + 1 Carleton + 4 Swarthmore students
+    - Currently: 16 Vassar students + 1 Amherst + 1 Swarthmore students
+        - Lectures will be synchronized online in real time and recorded for remote students; online office hours for remote students
+        - Group work across campuses
+
+
+## Online/hybrid teaching and learning cont'd
+
+- Pre-course survey - please fill out; there will be a post-course survey
+
+\pause
+
+- My experience:
+    - Some learning material are suitable for video form (e.g. guest lecture videos, recaps, R demo)
+    - Moodle discussion forum is great to foster a learning community
+    - Wish to have more interaction among Vassar and remote students (case studies, projects)
+    - Wish to have more interaction among Vassar students: every week please sit with a different neighbor!
+
+\pause
+
+- Previous students' advice/comments:
+    - ``Try and take the course with at least one other local student, so you have someone to reach out to locally if necessary."
+    - ``If you are a local student, it will not make a big difference."
+    - ``Rewatch the youtube lecture videos, go to office hours, and get an early start on the project."
+    - ``The textbook was very different than in class lectures."
+
+
+## Online/hybrid teaching and learning cont'd
+- Responses to post-survey ``Do you re-watch the lecture recordings? How often? For what reasons?"
+
+    - ``Yes. Rewarded every lecture around twice for Studying" (Vassar)
+    - ``Yes for revising" (Remote)
+    - ``Yes, once to learn the material" (Remote)
+    - ``Yes, when studying for tests, and to learn something that wasn’t clear to me the first time I heard it" (Vassar)
+    - ``Yes, to get explanations for concepts that I was using in my project" (Remote)
+    - ``I re-watched lectures when doing assignments, and preparing for the exams." (Remote)
+    - ``I re-watched them usually when trying to do labs and homeworks. And then reviewing key concepts before exams " (Vassar)
+    - ``Yes, skimmed through the videos to cover things that I missed / didn't have time to write down during class." (Vassar)
+    - ``Yes, I did rewatch them, mostly to study before exams but also when I had homework questions as well." (Vassar)
+    - ``Yes. Once every week or 2 weeks. For revision or absence." (Vassar)
+
+
+
+
+## Course components
+
+- The three parts of material: \underline{inference, computation, applications}
+
+- One extra part hidden: \underline{review of material} from prerequisite courses (e.g. calculus, linear algebra, and probability)
+
+\pause
+
+- Each part is a combination of a selection of the following: readings, lectures, labs, homework, discussions (in-class and online), case study, and project
+
+\pause
+
+- The course project (individual or in pair; cross-campus collaboration is highly encouraged!) is a final product involving inference, computation, and applications
+
+## Course project
+
+- Apply the Bayesian methods you've learned in this course and/or explore new Bayesian methods to solve research question(s) of your choice
+
+- Present at a poster session (last class), with a 2-min intro video
+\pause
+
+- Examples of projects from Spring 2019
+    - Earnings and Sexual Orientation [link](https://www.youtube.com/watch?v=Lj2XO4FT7-g&list=PL_lWxa4iVNt1ANb0x2ZzEz0YNnSuPExqs&index=57&t=79s)
+    - Bayes by Backprop: Weight Uncertainty in Neural Networks [link](https://www.youtube.com/watch?v=1Y2ajyVE4sk&list=PL_lWxa4iVNt1ANb0x2ZzEz0YNnSuPExqs&index=54&t=0s)
+    - Bayesian Word Embeddings [link](https://www.youtube.com/watch?v=eAH54-X33R8&list=PL_lWxa4iVNt1ANb0x2ZzEz0YNnSuPExqs&index=56&t=0s)
+    - Full list of projects: [link](https://docs.google.com/spreadsheets/d/1hAA_0vyWuIwV0Hm4qqM5t1mSMpab9V92dZWbtMhYA2o/edit?usp=sharing)
+    
+\pause 
+
+- Questions?
+
+- Ideas to discuss and share?
+    
+## Grading
+
+\begin{center}
+\begin{tabular}{l l }%p{0.5cm} l l p{0.5cm} l l}
+Homework \& Labs	& 25\% \\
+Participation   & 10\% \\
+Midterm exam & 40\% (20\% $\times$ 2) \\
+Project	& 25\%	\\
+\end{tabular}
+\end{center}
+
+- Grades curved at the end of the course after overall averages have been calculated.
+
+- Average of 90-100 guaranteed A-.
+- Average of 80-90 guaranteed B-.
+- Average of 70-80 guaranteed C-.
+- Average of 60-70 guaranteed D-.
+
+- The more evidence there is that the class has mastered the material, the more generous the curve will be.
+
+
+
+## To do
+
+- Complete the Class Survey and Pre-course Survey asap 
+
+- Register DataCamp account and access our MATH 347 Group
+    - (Introduction to R - 4 hours)
+    - (Intermediate R - 6 hours)
+    - Introduction to the Tidyverse - 4 hours
+    - All due Monday 9/16 11:59pm
+    <!-- - Data Manipulation with dplyr in R - 4 hours -->
+    <!-- - Introduction to Data Visualization with ggplot2 - 4 hours -->
+
+
+- Make a self-introduction post (written or video) and read/watch others' posts (especially for common project interests - you can make a reply to indicate your interests of working on the project in pair)
+
+- Get the textbook, read Chapter 1 and Chapter 2
+
+- Download and install R and RStudio
+
+
+
+# Interpretation of probability and Bayes' Rule
+
+## Motivating Bayesian Inference
+
+- Significance tests and confidence intervals are forms of
+  \textcolor{VassarRed}{classical} or \textcolor{VassarRed}{frequentist} inference.
+
+- When might classical inference be inadequate?
+    - Suppose you flip a coin (with unknown probability of heads) three times and get tails all three times.
+    - The sample percentage of heads equals zero.  But, this can't be an accurate estimate of the
+  true percentage of heads!
+    - \underline{A priori} of flipping the coin, we believe the true percentage is around 0.5, not 0.0.
+
+\pause
+
+- Bayesian inference provides a formal method for quantifying and
+  incorporating our prior beliefs into inference.
+
+
+
+## Why Bayesian statistics?
+
+- Long history: named after the $18^{th}$ century Presbyterian minister and mathematician Thomas Bayes (1701 - 1761).
+
+```{r pressure, echo=FALSE, out.width = '15%', fig.align="center"}
+knitr::include_graphics("figures/Thomas_Bayes.png")
+```
+
+<!-- # ```{r, echo = FALSE} -->
+<!-- # url <- "https://en.wikipedia.org/wiki/Thomas_Bayes#/media/File:Thomas_Bayes.gif" -->
+<!-- # ``` -->
+\pause
+
+- Modeling: incorporate prior belief or domain experts knowledge.
+
+- Theoretical: doesn't need large sample assumption.
+
+- Computational: Markov chain Monte Carlo (MCMC).
+
+Bayesian approaches are largely popularized by revolutionary advance in computational technology during the last twenty five years (the invention of Gibbs sampler around 1990 - we will read a research paper about it later).
+
+
+
+
+
+
+## Two schools of statistics
+
+
+\twocol{0.5}{0.5}
+{
+\underline{Frequentist/classical}
+}
+{
+\underline{Bayesian}
+}
+
+
+\twocol{0.5}{0.5}
+{
+\vfill
+Probability: long run relative frequencies of repeatable events.
+$$
+P(A) = \lim_{n \rightarrow \infty}\frac{\#(A)}{n}
+$$
+
+\vspace{5mm}
+
+\begin{itemize}
+\item One time events?
+\item Small sample sizes?
+\end{itemize}
+}
+{
+\vfill
+Probability: a subjective degree of belief.
+
+\begin{itemize}
+\item Two people could have differing probabilities $P(A)$.
+
+\item Probability changes as new information (data) arise according to \textcolor{VassarRed}{Bayes' rule}.
+\vspace{5mm}
+$$
+P(A \mid B) = \frac{P(B \mid A) P(A)}{P(B)}
+$$
+
+\end{itemize}
+}
+
+
+
+## Two schools of statistics cont'd
+
+Example 1: A study on several different, but similar populations, for each of which is needed an estimate of variability. How should one use the important prior information that the populations are similar?
+
+\pause
+
+- \underline{Frequentist/classical}: deciding between separate estimates of variance or a pooled variance $\rightarrow$ very crude utilization of the prior information
+
+- \underline{Bayesian}: techniques such as hierarchical Bayesian analysis to use the same distribution for all variances $\rightarrow$ allows much more efficient use of such prior information
+    
+## Two schools of statistics cont'd
+
+Example 2: A 95\% confidence interval of an unknown parameter $\theta$, interpretation? An interval that has probability of 0.95 of containing $\theta$?
+
+\pause
+
+ \underline{Frequentist/classical}: NO $\rightarrow$ indirectly related to the probability of the hypothesis
+ 
+ \underline{Bayesian}: YES $\rightarrow$ directly related to the probability of the hypothesis
+
+## Two schools of statistics cont'd
+
+Two issues in the previous Example 2:
+
+- Philosophically pragmatic: what is the best way of quantifying uncertainty?
+
+- Pragmatically pragmatic: how statistical users (laymen) interpret statistical conclusions? How much work does it take for statistics educators to explain the correct interpretations of p-values and confidence intervals?
+
+
+## Two schools of statistics cont'd
+
+Remarks:
+
+- Not everyone has taken a mathematical statistics or classical statistical inference course, therefore in this course we won’t emphasize more on the differences and comparisons between frequentist/classcial statistics and Bayesian statistics.
+
+- We will think like a Bayesian for the entire semester.
+
+- For those of you who had frequentist statistics training before, please think broadly and feel free to ask questions and/or start a discussion with the entire class (on Moodle)!
+
+
+## Toy example: procedure of Bayesian inference
+Goal: making inference for an unknown quantity
+
+\vspace{5mm}
+\pause
+Inference procedure:
+
+- Before seeing any data, we have \textcolor{VassarRed}{prior probability}: P(hypothesis)
+
+\pause
+
+- Collect data
+
+\pause
+
+- After collecting data, we update our probability of the hypothesis given the data we just observed. It is called \textcolor{VassarRed}{posterior probability}: P(hypothesis $|$ data)
+
+\pause
+
+\vspace{5mm}
+
+Note that the frequentist p-value is P(data $|$ hypothesis), the probability of observed or more extreme data given the null hypothesis being true.
+
+
+
+## Toy example: breast cancer screening
+
+- American Cancer Society estimates that about 1.7\% of women have breast cancer. 
+\small\webURL{http://www.cancer.org/cancer/cancerbasics/cancer-prevalence}
+
+- Susan G. Komen For The Cure Foundation states that mammography correctly identifies about 78\% of women who truly have breast cancer. 
+\small\webURL{http://ww5.komen.org/BreastCancer/AccuracyofMammograms.html}
+
+- An article published in 2003 suggests that up to 10\% of all mammograms are false positive. \small \webURL{http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1360940}
+
+\vfill
+
+\Note{These percentages are approximate, and very difficult to estimate.}
+
+
+## Toy example: determining the prior
+
+\disc{Prior to any testing and any information exchange between the patient and the doctor, what probability should a doctor assign to a female patient having breast cancer?}
+
+\pause
+
+\vspace{1cm}
+0.017
+
+
+## Toy example: calculating the posterior
+
+\disc{When a patient goes through breast cancer screening there are two competing claims: patient had cancer and patient doesn't have cancer. If a mammogram yields a positive result, what is the probability that patient has cancer, i.e. what is the posterior probability of having cancer if mammogram yield a positive result?}
+
+\pause
+
+
+\begin{align*}
+&P(c | +) = \frac{P(C~and~+)}{P(+)} \\
+&= \frac{0.017 \times 0.78}{0.017 \times 0.78 + 0.983 \times 0.1} \\
+&= 0.12
+\end{align*}
+
+
+
+## Toy example: updating the prior
+
+- In the Bayesian approach, we evaluate claims iteratively as we collect more data $\rightarrow$ sequential update.
+
+\pause
+
+- In the next iteration (screening) we get to take advantage of what we learned from the data.
+
+\pause
+
+- In other words, we \textcolor{VassarRed}{update} our prior with our posterior probability from the previous iteration.
+
+
+## Toy example: updating the prior when retesting
+
+\disc{Suppose this woman who got a positive result in the first test wants to get tested again. What should the new prior probability that this woman has cancer? Is this probability smaller, larger, or equal to the prior probability in the first test? Why?}
+
+\begin{enumerate}[(a)]
+\item 0.017
+\item 0.12
+\item 0.0133
+\item 0.88
+\end{enumerate}
+
+\pause
+
+Answer: (b)
+
+## Toy example: re-calculating the posterior when retesting
+
+\disc{What is the posterior probability of having cancer if this second mammogram also yielded a positive result?}
+
+
+\begin{enumerate}[(a)]
+\item 0.0936
+\item 0.088
+\item 0.48
+\item 0.52
+\end{enumerate}
+
+\pause
+
+Answer: (d)
+
+\vspace{3mm}
+
+$$
+P(c | +) = \frac{P(c~and~+)}{P(+)} = \frac{0.12 \times 0.78}{0.12 \times 0.78 + 0.88 \times 0.1} = 0.52
+$$
+
+
+## Toy example: recap of Bayesian inference
+
+- Take advantage of prior information, like a previously published study or a physical model.
+
+\pause
+
+- Naturally integrate data as you collect it, and update your priors.
+
+\pause
+
+- Avoid the counter-intuitive Frequentist definition of a p-value as the P(observed or more extreme outcome $|$ $H_0$ is true). Instead base decisions on the posterior probability, P(hypothesis is true $|$ observed data).
+
+\pause
+
+- \textcolor{VassarRed}{Watch out!}
+A good prior helps, a bad prior hurts, but the prior matters less the more data you have.
+
+\pause
+
+- More advanced Bayesian techniques offer flexibility not present in Frequentist models.
+
+
+# Bayesian inference
+
+## What is fixed, $Y$ or $\theta$?
+
+Both frequentist and Bayesian aim to use data $Y$ to learn about the unknown parameter $\theta$.
+
+\twocol{0.55}{0.45}{
+\underline{Frequentist}:
+{\Large
+$$
+ p(Y \mid \theta)
+$$
+}
+{\small{
+\begin{itemize}
+\item Data are a repeatable random sample
+\item Underlying parameters remain constant during this repeatable process
+\item \textcolor{VassarRed}{Parameters $\theta$ are fixed}
+\end{itemize}
+}}
+}
+{
+
+\underline{Bayesian}: 
+{\Large
+$$
+ p(\theta|Y)
+$$
+}
+{\small{
+\begin{itemize}
+\item Data are observed from the realized sample
+\item Parameters are unknown and described probabilistically
+\item \textcolor{VassarRed}{Data $Y$ are fixed}
+\end{itemize}
+}}
+}
+
+
+## Extending to statistical analysis
+Bayes Theorem extends naturally to parameters in statistical
+inference.
+
+- ``Characteristics'' are akin to parameters $\theta$ in probability
+  models, e.g.,  $\theta=p$ in the Binomial distribution $\textrm{Binomial}(n, p)$.
+  
+- ``Data'' are akin to measurements on sampled data subjects expressed
+  numerically, say $y$.
+  
+- Before the sample is collected, both $y$ and $\theta$ are unknown.
+
+- ``Model for data'' is akin to a probability model for $Y$
+     assuming we know $\theta$, e.g., $Y \sim \textrm{Binomial}(n, p)$.
+     
+- We express prior information about $\theta$ as a (different) probability model.
+
+
+## Bayesian inference
+
+Bayesian inference provides a formal approach for updating prior beliefs with the observed data to quantify
+uncertainty *a posteriori* about $\theta$.
+
+- Prior distribution $\pi(\theta )$
+
+- Sampling model $f(y \mid \theta)$
+
+- Posterior distribution:
+
+$$ \pi(\theta \mid y) = \frac{ f(y \mid \theta) \, \pi(\theta)}{f(y)}
+= \frac{ f(y \mid \theta) \, \pi(\theta)}
+ {\int_{\Theta}  f(Y \mid \tilde{\theta})\pi(\tilde{\theta})d\tilde{\theta}}
+$$
+
+(for discrete support for $\theta$ replace integral with sum)
+
+
+## Bayesian inference for proportion
+
+- What percentage $p$ of all Vassar students stayed up at least one night to get school work done last academic year.
+
+- Suppose we sample ten MATH 347 students and ask whether they stayed up at least one night last academic year.
+
+\pause
+
+- Let's build a (simplified) prior distribution and use Bayesian inference to learn about $\theta = p$.
+
+- We will make the (incorrect) assumption that the sample is representative of Vassar
+  students at large, since this is just an illustration of ideas.
+  
+
+## Prior distribution
+
+We will use the unrealistic but instructive prior distribution defined
+by consensus of the class:
+
+\begin{eqnarray*}
+P(p = 0) = \,\,\,\,\, & P(p = 0.1) = \,\,\,\,\,  & P(p = 0.2) = \\
+P(p = 0.3) = \,\,\,\,\, & P(p = 0.4) = \,\,\,\,\,  & P(p = 0.5) = \\
+P(p = 0.6) = \,\,\,\,\, & P(p = 0.7) = \,\,\,\,\, & P(p = 0.8) =  \\
+P(p = 0.9) = \,\,\,\,\, & P(p = 1.0) = \,\,\,\,\, &  \\
+\end{eqnarray*}
+
+We'll do the posterior probability calculation following the All_nighters_example.Rmd (available on Moodle).
+
+
+## Analsyis goals
+
+Bayesian methods go beyond the formal updating of the prior
+distribution to obtain a posterior distribution:
+
+- Estimation of uncertain quantities (parameters) with
+  good statistical properties.
+  
+- Prediction of future events.
+
+- Tests of hypotheses.
+
+- Making decisions.
+
+
+# Probability review
+
+
+## Events and partitions
+
+\begin{defn}
+A collection of sets $\{H_1, \cdots, H_k\}$ is a \textcolor{VassarRed}{partition} of another set $\mathcal{H}$ if
+
+\begin{itemize}
+\item[1.] the events are disjoint, which we write as $H_i \cap H_j = \emptyset$ for $i \neq j$;
+\item[2.] the union of the sets is $\mathcal{H}$, which we write as $\cup_{k=1}^K H_k = \mathcal{H}$.
+\end{itemize}
+\end{defn}
+
+\vspace{5mm}
+
+Examples?
+
+
+## Partitions and probability
+
+Suppose $\{H_1, \cdots, H_K\}$ is a partition of $\mathcal{H}$, $Pr(\mathcal{H}) = 1$, and $E$ is some specific event. The \textcolor{VassarRed}{axioms of probability} imply:
+
+- Rule of total probability
+$$
+\sum_{k=1}^{K} Pr(H_k) = 1
+$$
+
+- Rule of marginal probability
+$$
+Pr(E) = \sum_{k=1}^K Pr(E \cap H_k) = \sum_{k=1}^K Pr(E \mid H_k)Pr(H_k)
+$$
+
+- Bayes' rule
+$$
+Pr(H_j|E) = \frac{Pr(E \mid H_j)Pr(H_j)}{Pr(E)} = \frac{Pr(E \mid H_j)Pr(H_j)}{\sum_{k=1}^KPr(E \mid H_k)Pr(H_k)}
+$$
+
+
+
+## In Bayesian inference
+
+- $\{H_1, \cdots, H_K\}$: disjoint hypotheses or states of nature.
+
+- $E$: the outcome of a survey, study or experiment.
+
+To compare hypotheses post-experimentally $Pr(H_i \mid E)$ v.s. $Pr(H_j \mid E)$:
+
+\begin{eqnarray*}
+  \frac{Pr(H_i \mid E)}{Pr(H_j \mid E)} &=& \frac{Pr(E \mid H_i)Pr(H_i)/Pr(E)}{Pr(E \mid H_j)Pr(H_j)/Pr(E)} \\ \pause
+    &=& \frac{Pr(E \mid H_i)Pr(H_i)}{Pr(E \mid H_j)Pr(H_j)}  \\ \pause
+    &=& \frac{Pr(E \mid H_i)}{Pr(E \mid H_j)} \times \frac{Pr(H_i)}{Pr(H_j)} \\
+    &=& \textcolor{VassarRed}{"Bayes \, factor"} \times \textcolor{VassarRed}{"prior \, beliefs"}
+\end{eqnarray*}
+
+\pause
+
+Bayes' rule does not determine what our beliefs should be after seeing the data. It tells us how they should \textcolor{VassarRed}{change} after seeing the data.
+
+
+## Univariate random variable 
+
+ Cumulative distribution function (cdf)
+ 
+$$
+F_X(x) = P(X \leq x), \quad \text{for any } x \in \mathbb{R}
+$$
+
+\begin{center}
+\begin{tabular}{lll}
+\hline
+\rule{0pt}{3ex}				&Discrete 					& Continuous\\
+pmf / pdf \rule{0pt}{3ex}		&  $f_X(x) = P(X = x)$ 		&  $P(X \in B) = \int_B f(x) dx$\\
+well-defined \rule{0pt}{3ex}	& $\sum_{i=1}^{\infty} f(x_i) = 1$ 		& $\int_{-\infty}^{\infty} f(x)~ dx = 1$ \\
+cdf	\rule{0pt}{3ex}			&$F(a) = \sum_{\text{all } x \leq a} f(x)$ & $F(x) =  \int_{-\infty}^{x} f(t) dt$\\
+							&									& $f(x) = \frac{d}{dx}F(x)$\\
+expectation \rule{0pt}{3ex}	&$E[X] = \sum_{\text{all } x} x \cdot f(x)$ & $E[X] = \int_{-\infty}^{\infty} x f(x) dx$ \\
+\rule{0pt}{3ex}				&$E[g(X)] = \sum_{\text{all }x} g(x)~f(x)$ & $E[g(X)] = \int_{-\infty}^{\infty} g(x) f(x) dx$\\
+\hline
+\end{tabular}
+\end{center}
+
+
+## Joint distribution
+
+\begin{center}
+\begin{tabular}{lll}
+\hline
+\rule{0pt}{3ex}				&Discrete 					& Continuous\\
+pmf/pdf \rule{0pt}{3ex}		&  $P(X=x,Y=y)$ 		&  $P[(X, Y) \in C] = \iint_{(x, y) \in C} f(x,y) ~dxdy$\\
+marginal 	\rule{0pt}{3ex}	&$f_X(x) = \sum_{y} f(x,y)$,
+								&$f_X(x) = \int_{-\infty}^\infty f(x,y)~dy$,\\
+\rule{0pt}{3ex}					& $f_Y(y) = \sum_{x} f(x,y)$									
+							& $f_Y(y) = \int_{-\infty}^\infty f(x,y)~dx$\\
+cdf\rule{0pt}{3ex}					& & $F(a,b) = \int_{-\infty}^{b} \int_{-\infty}^{a}f(x,y)~dxdy $\\
+\rule{0pt}{3ex}					& & $f(x,y) = \frac{\partial^2}{\partial x \partial y} F(x,y) $\\							
+\hline
+\end{tabular}
+\end{center}
+
+
+## Conditional distribution
+
+$$
+f_{X \mid Y}(x \mid y) = \frac{f(x,y)}{f_Y(y)}
+$$
+
+- Joint density $f(x,y)  = f(x \mid y)f_Y(y) = f(y \mid x)f_X(x)$
+
+\pause
+
+\textcolor{VassarRed}{Conditional expectation}
+
+- $E(X \mid Y=y) = \sum_x f(x \mid y)$  or $\int_{-\infty}^{\infty} x f(x \mid y)dx$ 
+- Law of total expectation
+$$
+E_Y\left[ E(X \mid Y) \right] = E(X)
+$$
+
+\textcolor{VassarRed}{Conditional variance}
+
+- $Var(X \mid Y = y) = E[(X - E[X \mid Y = y])^2 \mid Y = y]$
+
+- A very useful conditional variance formula
+$$
+Var(X) = E[Var(X \mid Y)] + Var(E[X \mid Y])
+$$
+
+
+## Transformation of variables
+
+Suppose X is a continuous random variable with pdf $f_X(x)$. If a function $g(x)$ is
+
+- monotonic (increasing or decreasing), and
+- differentiable (and thus continuous),
+
+then the random variable defined by $Y = g(X)$ has pdf
+
+$$
+f_Y ( y ) = f_X( x )  \left|\frac{dx}{dy}\right|
+$$
+
+\pause
+
+Or more rigorously,
+
+\begin{align*}
+f_Y ( y ) =
+  \begin{cases}
+  f_X\left[ g^{-1}(y) \right] \cdot \left|\frac{d}{dy}g^{-1}(y)\right| & \text{ if } y = g(x) \text{ for some } x \\
+  0 													 & \text{ if } y \neq g(x) \text{ for all } x \\
+  \end{cases}
+\end{align*}
+
+
+## _
+
+\disc{Example: let $X \sim \text{Unif}(0, 1)$, what distribution does $Y = -\ln(X)$ have? (Hint: monotonic \& differentiable, then $f_Y ( y ) = f_X( x )  \left|\frac{dx}{dy}\right|$)}
+
+\vspace{0.2cm}
+\twocol{0.3}{0.7}{
+\includegraphics[width=\textwidth]{figures/neg_log}
+}
+{
+\pause
+{\small{
+In order to use the previous theorem, need to check the function $g(x) = -\ln(x)$
+\begin{itemize}
+\item monotonic
+\item differentiable
+\end{itemize}
+
+\pause
+
+Inverse function $g^{-1}(y)$: $y = -\ln(x) \Longleftrightarrow x = e^{-y}$
+
+$$
+\frac{dx}{dy} = -e^{-y}
+$$
+}
+
+\pause
+
+Range of $Y$: $y \in [0, \infty)$.
+
+$$
+f_Y ( y ) = f_X(x)  \left|\frac{dx}{dy}\right| = 1 \cdot \left| -e^{-y} \right| = e^{-y}
+$$
+
+\pause
+Therefor, $Y$ has an exponential distribution: $Y \sim \text{Exp}(1)$.
+}}
+
+
+## Independent random variables
+\vspace{1mm}
+\begin{defn}
+\small{
+Suppose $Y_1, \cdots, Y_n$ are random variables and that $\theta$ is a parameter describing the conditions under which the random variables are generated. We say that $Y_1, \cdots, Y_n$ are \textcolor{VassarRed}{conditionally independent} given $\theta$ if for every collection of n sets $\{A_1, \cdots, A_n\}$ we have
+$$Pr(Y_1 \in A_1, \cdots, Y_n \in A_n \mid \theta) = Pr(Y_1 \in A_1 \mid \theta) \times \cdots \times Pr(Y_n \in A_n \mid \theta)$$
+}
+\vspace{-2mm}
+\end{defn}
+\pause
+\small{
+Under independence, the joint density is the product of the marginal densities
+$$
+f(y_1, \cdots, y_n \mid \theta) = f_{Y_1}(y_1 \mid \theta) \times \cdots \times f_{Y_n}(y_n \mid \theta) = \prod_{i=1}^{n}f_{Y_i}(y_i \mid \theta)
+$$
+}
+\vspace{-2mm}
+\pause
+\small{
+\begin{defn}
+In this case, we say that $Y_1, \cdots, Y_n$ are \textcolor{VassarRed}{conditionally independent and identically distributed (i.i.d.)}
+$$
+Y_1, \cdots, Y_n \mid \theta \stackrel{iid}{\sim} f(y \mid \theta)
+$$
+\end{defn}
+}
+
+
+## Independent random variables cont'd
+
+\disc{Example: let $Y_1, \cdots, Y_n \mid \mu, \sigma \stackrel{iid}{\sim} \textrm{Normal}(\mu, \sigma)$, write out the joint density of $f(Y_1, \cdots, Y_n \mid \mu, \sigma)$. (Hint: the Normal pdf is $f(Y_i = y_i \mid \mu, \sigma) = \frac{1}{\sqrt{2\pi \sigma^2}}\exp(-\frac{(y_i - \mu)^2}{2\sigma^2})$)}
+
+\pause
+
+\begin{eqnarray*}
+f(Y_1 = y_1, \cdots, Y_n = y_n \mid \mu, \sigma) &=& \prod_{i=1}^n f_{Y_i}(y_i \mid \mu, \sigma) \\
+                                                 &=& \prod_{i=1}^n \frac{1}{\sqrt{2\pi \sigma^2}}\exp \left(-\frac{(y_i -   \mu)^2}{2\sigma^2}\right) \\
+                                                 &=& \left(\frac{1}{\sqrt{2\pi \sigma^2}}\right)^n \exp \left(-\frac{\sum (y_i - \mu)^2}{2\sigma^2}\right)
+\end{eqnarray*}
+
+
+## Exchangeablility
+
+Let $f(y_1, \ldots, y_n)$ be the joint distribution of
+$Y_1, \ldots, Y_n$ and let $\pi_1, \ldots, \pi_n$ be a permutation of
+the indices $1, \ldots, n$. If $f(y_1, \ldots, y_n) = f(y_{\pi_1}, \ldots, y_{\pi_n})$  for all
+permutations, then $Y_1, \ldots, Y_n$ are \textcolor{VassarRed}{exchangeable}.
+
+\vspace{.25in}
+{\bf de Finetti's Theorem} $Y_1, \cdots, Y_n$  be a sequence of random variables.
+If for any $n$, $Y_1, \cdots, Y_n$ are exchangeable, then there exists a
+prior distribution $\pi(\theta)$ and sampling model $f(y \mid \theta)$
+such that
+$$
+f(y_1, \ldots, y_n) = \int_\Theta \left\{ \prod_1^n f(y_i \mid \theta) \right\} \pi(\theta)\, d \theta
+$$
+
+
+## Models
+
+$$ 
+\left. \begin{array}{l} Y_1, \ldots Y_n \mid \theta \stackrel{\text{iid}}{\sim} p(y \mid
+  \theta) \\
+\theta \sim p(\theta)
+\end{array} \right\} \Longleftrightarrow  Y_1, \ldots Y_n \text{ are exchangeable for
+  all } n
+$$
+\vspace{5mm}
+
+Applicable if $Y_1, \ldots, Y_n$ are
+
+- outcomes of a repeatable experiment
+- random sample from finite population with replacement
+- sampled from an infinite population w/out replacement
+- sampled from a finite population of size $N >> n$ w/out
+  replacement (approximate)
+
+Labels carry no information.
