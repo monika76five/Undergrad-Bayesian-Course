@@ -24,4 +24,5 @@
     
     ```{r, eval = FALSE}
     devtools::install_github("bayesball/ProbBayes")
+    require(ProbBayes)
     ```
