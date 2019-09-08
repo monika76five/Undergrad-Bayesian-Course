@@ -17,3 +17,11 @@
     - [Book website](https://monika76five.github.io/ProbBayes/)
     
     - [CRC Page for the Book](https://www.crcpress.com/Probability-and-Bayesian-Modeling/Albert-Hu/p/book/9781138492561)
+
+- The \texttt{ProbBayes} R package
+
+    - To install:
+    
+    ```{r, eval = FALSE}
+    devtools::install_github("bayesball/ProbBayes")
+    ```
