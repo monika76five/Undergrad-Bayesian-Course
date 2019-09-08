@@ -1,0 +1,71 @@
+---
+output:
+  pdf_document: default
+header-includes:
+  - \usepackage{color}
+  - \usepackage[dvipsnames]{xcolor}
+---
+----
+ Fall 2019: MATH 347 Bayesian Statistics
+---
+
+## \textcolor{RoyalBlue}{R Script for the All-nighters Problem}
+
+Here we use R for the Bayesian posterior distribution with Binomial data and a discrete prior. A script to estimate the posterior distribution has been created and provided here. 
+You can copy this directly into R and it will run all the commands. 
+
+
+#### \textcolor{RoyalBlue}{Step 1: Load the prior and data.}
+
+```{r}
+priorvalues <- c(0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1)
+priorprob <- c(1/23, 1/23, 7/23, 7/23, 3/23, 3/23, 1/23, 0/23, 0/23, 0/23, 0/23)
+
+n <- 10
+y <- 3
+```
+
+#### \textcolor{RoyalBlue}{Step 2: Calculating the likelihood probabilities and posterior probabilities.}
+```{r}
+#vector for storing results
+jointprob <- numeric(length = length(priorvalues))
+
+for(i in 1:length(priorvalues))
+{
+  
+  #compute Binomial probability given value of p - likelihood
+  binomprob <- dbinom(y, n, p = priorvalues[i])
+  
+  #compute joint probability - posterior
+  jointprob[i] <- binomprob * priorprob[i]
+  
+}
+
+#compute marginal probability of y 
+pofy <- sum(jointprob)
+
+#compute posterior probabilities
+posteriorprob <- jointprob/pofy
+```
+
+#### \textcolor{RoyalBlue}{Step 3: Present and visualize results.}
+```{r}
+#put posterior probabilities in one matrix object for easy viewing 
+allnighterposterior <- as.data.frame(cbind(priorvalues, priorprob, posteriorprob))
+names(allnighterposterior) <- c("p", "prior", "posterior")
+
+#list the final posterior distribution, based on our prior derived in class
+allnighterposterior
+
+#plot the prior and posterior probabilities
+require(ggplot2)
+require(reshape2)
+
+allnighterposterior_all <- melt(allnighterposterior, id = "p")
+
+ggplot(allnighterposterior_all, aes(x = p, y = value, colour = variable)) +
+  geom_point(size = 3) + 
+  xlab("p") + ylab("probability") +
+ theme_bw(base_size = 12, base_family = "")
+
+```
