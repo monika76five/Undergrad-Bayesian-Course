@@ -43,6 +43,6 @@
     
     - Computing in R: equivalent to DataCamp's
     
-        - Introduction to R [link](https://www.datacamp.com/courses/free-introduction-to-r)
-        - Intermediate R [link](https://www.datacamp.com/courses/intermediate-r)
-        - Introduction to the Tidyverse [link](https://www.datacamp.com/courses/introduction-to-the-tidyverse)
+        - Introduction to R: [DataCamp link](https://www.datacamp.com/courses/free-introduction-to-r)
+        - Intermediate R: [DataCamp link](https://www.datacamp.com/courses/intermediate-r)
+        - Introduction to the Tidyverse: [DataCamp link](https://www.datacamp.com/courses/introduction-to-the-tidyverse)
