@@ -1,4 +1,4 @@
-# Bayesian Statistics
+# An Undergraduate Bayesian Statistics Course
 
 - The Fall 2019 iteration of MATH 347 Bayesian Statistics at Vassar College, NY:
 
