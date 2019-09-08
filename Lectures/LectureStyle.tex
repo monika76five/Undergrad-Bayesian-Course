@@ -1,0 +1,260 @@
+
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{pifont}
+\usepackage{pgf,pgfarrows,pgfnodes}
+\usepackage[english]{babel}
+\usepackage{pgfpages}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{multimedia}
+\usepackage{amsmath,amsfonts,amstext,amssymb,amsbsy,amsopn,amsthm,eucal,latexsym,mathrsfs}
+\usepackage{ulem}
+\usepackage{setspace}
+\usepackage{array}
+\usepackage{multirow}
+
+
+
+\setbeamertemplate{navigation symbols}{}
+
+
+\definecolor{links}{HTML}{2A1B81}
+\hypersetup{colorlinks,linkcolor=,urlcolor=links}
+
+\newtheorem*{principle}{Inscrutibility Principle}
+\newtheorem*{punchline}{Punch Line}
+\newtheorem{defn}{Definition}
+
+\definecolor{VassarRed}{RGB}{128,0,0}
+
+% "dinglist" environment
+  \renewenvironment{dinglist}[2][blue]
+  {\begin{list}{\textcolor{blue}{\ding{#2}}}{}}{\end{list}}
+  % Symbol definitions for these lists
+  \newcommand{\DingListSymbolA}{43}
+  \newcommand{\DingListSymbolB}{243}
+  \newcommand{\DingListSymbolC}{224}
+  \newcommand{\DingListSymbolD}{219}
+  \newcommand{\DingListSymbolCheck}{52}
+  \newcommand{\DingListSymbolCross}{56}
+
+
+  \newenvironment{ballotenv}
+{\only{%
+\setbeamertemplate{itemize item}{\ding{45}}%
+\setbeamertemplate{itemize subitem}{\ding{46}}%
+\setbeamertemplate{itemize subsubitem}{\ding{46}}}} {}
+\setbeamertemplate{itemize item}{\ding{49}}
+\setbeamertemplate{itemize subitem}{\ding{47}}
+\setbeamertemplate{itemize subsubitem}{\ding{47}}
+
+
+%User defined colors: See colors section
+\xdefinecolor{oiBlue}{rgb}{0.15, 0.35, 0.55}
+\xdefinecolor{gray}{rgb}{0.5, 0.5, 0.5}
+\xdefinecolor{darkGray}{rgb}{0.3, 0.3, 0.3}
+\xdefinecolor{darkerGray}{rgb}{0.2, 0.2, 0.2}
+\xdefinecolor{rubineRed}{rgb}{0.89,0,0.30}
+\xdefinecolor{linkCol}{rgb}{0.11,0.49,0.95}	
+\xdefinecolor{irishGreen}{rgb}{0,0.60,0}	
+\xdefinecolor{darkturquoise}{rgb}{0.44, 0.58, 0.86}
+\definecolor{lightGreen}{rgb}{0.533,0.765,0.42}
+\xdefinecolor{Regalia}{HTML}{522D80}
+
+\definecolor{Oranges}{RGB}{255,127,0}
+\definecolor{LightGray}{RGB}{211,211,211}
+
+%\setbeamertemplate{footline}{%
+%  \raisebox{5pt}{\makebox[\paperwidth]{\hfill\makebox[10pt]{\scriptsize\insertframenumber}}}}
+
+\setbeamercolor{equation background}{fg=black,bg=duke@LightGrey}
+  % Boxed equation
+  \newcommand{\eqbox}[2][0.6]{%
+  \centerline{
+  \begin{beamerboxesrounded}[lower=equation background,width=#1\hsize,shadow=true]{}
+\parbox{#1\hsize}{%
+      \[
+        \textcolor{black} {#2}
+      \]}
+  \end{beamerboxesrounded}
+}}
+
+\AtBeginSection[] {
+  \begin{frame}<beamer>\frametitle{Outline}
+    \tableofcontents[currentsection,hideothersubsections]
+  \end{frame}
+}
+
+\usecolortheme[RGB={128,0,0}]{structure}
+\usetheme[secheader]{Boadilla}
+
+
+
+
+\def\diag{{\rm diag}}
+
+
+\def\E{\mathbb{E}}
+\def\Prob{\mathbb{P}}
+\def\argmin{{\rm argmin}}
+\def\argmax{{\rm argmax}}
+\def\Def{\stackrel{def}{=}}
+
+
+\newtheorem{assumption}{Assumptions}
+\newtheorem*{proposition}{Proposition}
+\newtheorem*{remark}{Remark}
+
+
+
+
+\setbeamercolor{disc body}{bg= Regalia!20!white!80,fg= Regalia!80!black!90}
+
+\setbeamercolor{clicker ungraded title}{bg=irishGreen!80!white!50,fg=irishGreen!30!black!90}
+\setbeamercolor{clicker ungraded body}{bg=irishGreen!20!white!80,fg=irishGreen!30!black!90}
+
+\setbeamercolor{clicker review title}{bg=gray!80!white!80,fg=oiBlue!80!black!90}
+\setbeamercolor{clicker review body}{bg=gray!30!white!90,fg=oiBlue!80!black!90}
+
+\setbeamercolor{code body}{bg=gray!20!white!80,fg=black}
+
+
+% Custom commands
+\newcommand{\degree}{\ensuremath{^\circ}}
+\newcommand{\Note}[1]{
+\rule{2.5cm}{0.25pt} \\ \textit{\scriptsize {\textcolor{rubineRed}{Note:} \textcolor{gray}{#1}}}}
+\newcommand{\ct}[1]{
+\vfill
+{\tiny #1}}
+\newcommand{\Remember}[1]{\textit{\scriptsize{\textcolor{orange}{Remember:} \textcolor{gray}{#1}}}}
+\newcommand{\red}[1]{\textit{\textcolor{rubineRed}{#1}}}
+\newcommand{\pink}[1]{\textit{\textcolor{rubineRed!90!white!50}{#1}}}
+\newcommand{\green}[1]{\textit{\textcolor{irishGreen}{#1}}}
+\newcommand{\webURL}[1]{\urlstyle{same}\textit{\textcolor{linkCol}{\url{#1}}} }
+\newcommand{\webLink}[2]{\href{#1}{\textcolor{linkCol}{{#2}}}}
+\newcommand{\mail}[1]{\href{mailto:#1}{\textit{\textcolor{linkCol}{#1}}}}
+\newcommand{\hl}[1]{\textit{\textcolor{oiBlue}{#1}}}
+\newcommand{\hlGr}[1]{\textit{\textcolor{lightGreen}{#1}}}
+\newcommand{\mathhl}[1]{\textcolor{oiBlue}{\ensuremath{#1}}}
+\newcommand{\ex}[1]{\textcolor{blue}{{{\small (#1)}}}}
+\newcommand{\disc}[1]{
+\begin{beamerboxesrounded}[shadow = true, lower = disc body, upper = disc title]{}
+#1
+\end{beamerboxesrounded}
+}
+
+\newcommand{\cl}[1]{
+\begin{beamerboxesrounded}[shadow = true, lower = clicker ungraded body, upper = clicker ungraded title]{Question}
+$\:$ \\
+#1
+\end{beamerboxesrounded}
+}
+
+\newcommand{\clR}[1]{
+\begin{beamerboxesrounded}[shadow = true, lower = clicker review body, upper = clicker review title]{\red{Review question} }
+$\:$ \\
+#1
+\end{beamerboxesrounded}
+}
+
+\newcommand{\formula}[2]{
+\begin{beamerboxesrounded}[shadow = true, lower = white, upper = clicker review body]{#1}
+#2
+\end{beamerboxesrounded}
+$\:$ \\
+}
+
+\newenvironment{twocol}[4]{
+\begin{columns}[c]
+\column{#1\textwidth}
+#3
+\column{#2\textwidth}
+#4
+\end{columns}
+}
+
+
+\newenvironment{slot}[2]{
+\begin{array}{c}
+\underline{#1} \\
+#2
+\end{array}
+}
+
+\newcommand{\pr}[1]{
+\left( #1 \right)
+}
+
+\newcommand{\solnMult}[1]{
+\item[] \vspace{-0.59cm}
+\only<beamer| beamer:1>{\item #1}
+\soln{\only<2->{\item \red{#1}}}
+}
+
+% Change margin
+
+\newenvironment{changemargin}[2]{%
+\begin{list}{}{%
+\setlength{\topsep}{0pt}%
+\setlength{\leftmargin}{#1}%
+\setlength{\rightmargin}{#2}%
+\setlength{\listparindent}{\parindent}%
+\setlength{\itemindent}{\parindent}%
+\setlength{\parsep}{\parskip}%
+}%
+\item[]}{\end{list}}
+
+% Footnote
+
+\long\def\symbolfootnote[#1]#2{\begingroup%
+\def\thefootnote{\fnsymbol{footnote}}\footnote[#1]{#2}\endgroup}
+
+% Commands from the book
+\newenvironment{data}[1]{\texttt{#1}}{}
+\newenvironment{var}[1]{\texttt{#1}}{}
+\newenvironment{resp}[1]{\texttt{#1}}{}
+
+\def\t{\theta}
+\def\T{\Theta}
+\def\l{\lambda}
+\def\d{\delta}
+\def\b{\beta}
+\def\e{\varepsilon}
+\def\s{\sigma}
+\def\ss{\sigma^2}
+\def\Sy{S_{yy}}
+\def\SS{\textsf{SS}}
+\def\N{\textsf{N}}
+\def\NG{\textsf{NG}}
+\def\Ga{\textsf{G}}
+\def\Sx{S_{xx}}
+\def\Sxy{S_{xy}}
+\def\SYX{s^2_{Y|X}}
+\def\ha{{\hat\alpha}}
+\def\hb{{\hat\beta}}
+\def\hy{{\hat y}}
+\def\bx{\bar x}
+\def\by{\bar y}
+\def\tr{\textsf{tr}}
+\def\X{\mathbf{X}}
+\def\Y{\mathbf{Y}}
+\def\I{\mathbf{I}}
+\def\H{\mathbf{H}}
+
+% -------
+\def\N{\textsf{N}}
+\def\G{\textsf{G}}
+\def\E{\textsf{E}}
+\def\Wishart{\textsf{Wishart}}
+\def\BF{\textsf{BF}}
+
+\def\nl{\newline}
+
+\AtBeginDocument{%
+   \setlength\abovedisplayskip{0pt}
+   \setlength\belowdisplayskip{0pt}}
+   
+\newcommand{\columnsbegin}{\begin{columns}}
+\newcommand{\columnsend}{\end{columns}}
