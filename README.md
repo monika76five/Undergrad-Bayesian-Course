@@ -18,9 +18,7 @@
     
     - [CRC Page for the Book](https://www.crcpress.com/Probability-and-Bayesian-Modeling/Albert-Hu/p/book/9781138492561)
 
-- The \texttt{ProbBayes} R package
-
-    - To install:
+- The \textt{ProbBayes} R package
     
     ```{r, eval = FALSE}
     devtools::install_github("bayesball/ProbBayes")
