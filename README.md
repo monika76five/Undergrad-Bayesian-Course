@@ -36,8 +36,6 @@
         - Introduction to the Tidyverse: [DataCamp link](https://www.datacamp.com/courses/introduction-to-the-tidyverse)
 
 - Teaching and learning material (Fall 2019 iteration MATH 347 Bayesian Statistics at Vassar College, NY)
-
-    - Lecture recordings available at [this growing YouTube playlist](https://www.youtube.com/playlist?list=PL_lWxa4iVNt1TfbsAfv9aW_5KL9rZuAtr).
     
     - Lectures folder: lecture files (.Rmd and .pdf).
     
@@ -46,3 +44,5 @@
     - Labs folder: lab files (.Rmd and .pdf).
     
     - Case Studies folder: case study files.
+    
+    - Lecture recordings available at [this growing YouTube playlist](https://www.youtube.com/playlist?list=PL_lWxa4iVNt1TfbsAfv9aW_5KL9rZuAtr).
