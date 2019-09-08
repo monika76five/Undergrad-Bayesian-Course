@@ -29,7 +29,7 @@
     
     - JAGS (Just Another Gibbs Sampler)
     
-        - Downloading and installing: [link](https://sourceforge.net/projects/mcmc-jags/files/JAGS/4.x/)
+        - Downloading and installing: [sourceforge link](https://sourceforge.net/projects/mcmc-jags/files/JAGS/4.x/)
         
         - The runjags R package
         ```{r, eval = FALSE}
