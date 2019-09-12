@@ -1,0 +1,705 @@
+---
+title: Bayesian Inference for a Proportion
+author: Jingchen (Monika) Hu 
+institute: Vassar College
+date: MATH 347 Bayesian Statistics
+output:
+  beamer_presentation:
+    includes:
+      in_header: ../LectureStyle.tex
+slide_level: 2
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(gridExtra)
+require(ProbBayes)
+require(tidyverse)
+crcblue <- "#2905a1"
+knitr::opts_chunk$set(echo = TRUE)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+## Outline
+
+\tableofcontents[hideallsubsections]
+
+# Example: Tokyo Express customers' dining preference
+
+## Tokyo Express customers' dining preference
+- Tokyo Express is a popular Japanese restaurant on Lagrange Ave (10-15 minutes walk from Vassar).
+\pause
+- Suppose the restaurant owner wants to improve the business even more, especially for dinner.
+\pause
+- The owner plans to conduct a survey by asking their customers: ``what is your favorite day to eat out for dinner?"
+- The owner wants to find out how popular is choice of $\color{VassarRed}{\text{Friday}}$.
+
+
+# Bayesian inference with discrete priors
+
+## Bayesian inference with discrete priors
+- Three general steps of Bayesian inference:
+    - Step 1: express an opinion about the location of the proportion $p$ before sampling (prior).
+    - Step 2: take the sample and record the observed proportion of preferring Friday (data/likelihood).
+    - Step 3: use Bayes' rule to sharpen and update the previous opinion about $p$ given the information from the sample (posterior).
+\pause
+
+- Bayesian inference with $\color{VassarRed}{\text{discrete priors}}$:
+    - Step 1 on priors: list the $\color{VassarRed}{\text{finite number}}$ of possible values for the proportion $p$, and assign probability to each value.
+    \pause
+    - Step 2 on data/likelihood: $\color{VassarRed}{\text{Binomial distribution}}$.
+    \pause
+    - Step 3 on posterior: use the discrete version of the $\color{VassarRed}{\text{Bayes' rule}}$ (summation $\Sigma$) for to sharpen and update the probability of each specified possible values of $p$.
+
+
+## Step 1: Prior distribution
+- Consider the percentage of customers' choice is Friday, $p$.
+- $\color{VassarRed}{\text{Before giving out the survey}}$, let's consider:
+    - the possible value(s) of proportion $p$;
+    - the probability associate with each value of $p$.
+\pause
+- Suppose $p$ can take 6 possible values
+  \begin{eqnarray}
+  p = \{0.3, 0.4, 0.5, 0.6, 0.7, 0.8\}.
+  \label{eq:dining:p}
+  \end{eqnarray}
+\pause
+- Further suppose Tokyo Express owner believes that some values are more likely than the
+others, specifically, a prior distribution:
+  \begin{eqnarray}
+  \pi_{owner}(p)= (0.125, 0.125, 0.250, 0.250, 0.125, 0.125).
+  \label{eq:dining:expertprior}
+  \end{eqnarray}
+- Exercise: Is the prior distribution $\pi_{owner}(p)$ reasonable? (Hint: 3 axioms of probability)
+
+
+## Using R/RStudio to express and plot the prior $\pi_{owner}(p)$
+
+```{r fig.height = 2, fig.width = 2, fig.align = "center", size = "footnotesize"}
+bayes_table <- data.frame(p = seq(.3, .8, by=.1), 
+                          Prior = c(0.125, 0.125, 0.250, 
+                                    0.250, 0.125, 0.125))
+ggplot(data=bayes_table, aes(x=p, y=Prior)) +
+  geom_bar(stat="identity", fill=crcblue, width = 0.06)
+```
+
+## Step 2: Data/likelihood of proportion $p$
+- Now the Tokyo Express owner gives a survey to 20 customers.
+- Out of the 20 responses, 12 say that their favorite day for eating out for dinner is Friday.
+\pause
+- Quantity of interest: $p$, the proportion of customers prefer eating out for dinner on Friday.
+\pause
+- The data/likelihood is a function of the quantity of interest.
+- What would be the function of 12 out of 20 preferring Friday, in terms of the proportion $p$?
+
+## The Binomial distribution
+- A Binomial experiment:
+    1. One is repeating the same basic task or trial many times -- let the number of trials be denoted by $n$.
+    2. On each trial, there are two possible outcomes that are  called ``success" or ``failure".
+    3. The probability of a success, denoted by $p$, is the same for each trial.
+    4. The results of outcomes from different trials are independent.
+- Do you think the survey is a Binomial experiment?
+\pause
+- The probability of $y$ successes in a Binomial experiment is given by
+\begin{eqnarray}
+P(Y=y) = {n \choose y} p^y (1 - p)^{n - y}, y = 0, \cdots, n,
+\end{eqnarray}
+where $n$ is the number of trials and $p$ is the success probability.
+
+## The likelihood function
+- The probability of $y$ successes in a binomial experiment is given by
+\begin{eqnarray}
+P(Y=y) = {n \choose y} p^y (1 - p)^{n - y}, y = 0, \cdots, n,
+\end{eqnarray}
+where $n$ is the number of trials and $p$ is the success probability.
+\pause
+- The likelihood is the chance of 12 successes in 20 trials viewed as a function of the probability of success is $p$:
+\begin{eqnarray}
+\textrm{Likelihood} = L(p) = {20 \choose 12} p ^ {12} (1 - p) ^ 8.
+\label{eq:dining:likelihood}
+\end{eqnarray}
+    - $L$ is a function of $p$.
+    - $n$ is fixed and known.
+    - $Y$ is the random variable.
+    - $p$ is the quantity of interest, also the unknown parameter in the Binomial distribution.
+
+## Use R/RStudio to compute the likelihood function
+\begin{eqnarray}
+\textrm{Likelihood} = L(p) = {20 \choose 12} p ^ {12} (1 - p) ^ 8
+\label{eq:dining:likelihood}
+\end{eqnarray}
+
+- Need: sample size $n$ (20), number of successes $k$ (12), and possible values of proportion $p$ (\{0.3, 0.4, 0.5, 0.6, 0.7, 0.8\}).
+- Do not need: the assigned probabilities (0.125, 0.125, 0.250, 0.250, 0.125, 0.125) in the prior distribution $\pi_{owner}(p)$.
+
+## Use R/RStudio to compute the likelihood function 
+```{r, size = "footnotesize"}
+bayes_table$Likelihood <- dbinom(12, size=20, 
+                                 prob=bayes_table$p)
+bayes_table
+```
+
+## Step 3: Posterior distribution
+- Notations:
+    - $\pi(p)$ the prior distribution of $p$.
+    - $L(p)$ is the likelihood function.
+    - $\pi(p \mid y)$ the posterior distribution of $p$ after observing the number of successes $y$.
+\pause
+- The Bayes' rule for a discrete parameter has the form
+\begin{eqnarray}
+\pi(p_i \mid y)  = \frac{\pi(p_i) \times L(p_i)} {\sum_j \pi(p_j) \times L(p_j)},
+\label{eq:Discrete:bayesrule}
+\end{eqnarray}
+    - $\pi(p_i)$ the prior probability of $p = p_i$.
+    - $L(p_i)$ the likelihood function evaluated at $p = p_i$.
+    - $\pi(p_i \mid y)$ the posterior probability of $p = p_i$ given the number of successes $y$.
+    - the denominator gives the marginal distribution of the observation $y$ (by the $\color{VassarRed}{\text{Law of Total Probability}}$).
+    
+## Use R/RStudio to compute and plot the posterior
+```{r, size = "footnotesize"}
+bayesian_crank(bayes_table) -> bayes_table
+bayes_table
+```
+
+- Inference question: What is the $\color{VassarRed}{\text{posterior probability}}$ that over half of the customers prefer eating out on Friday for dinner?
+\pause
+\begin{eqnarray}
+ Prob(p > 0.5) = 0.463 + 0.147 + 0.029 = 0.639.
+\end{eqnarray}
+
+## Use R/RStudio to compute and plot the posterior
+```{r, size = "footnotesize"}
+bayesian_crank(bayes_table) -> bayes_table
+sum(bayes_table$Posterior[bayes_table$p > 0.5])
+```
+\pause
+
+- Exercise: What is the $\color{VassarRed}{\text{posterior probability}}$ that less than 40\% of the customers prefer eating out on Friday for dinner? 
+
+## Using R/RStudio to compute and plot the posterior
+```{r fig.height = 2.7, fig.width = 2.7, size = "footnotesize", fig.align = "center"}
+prior_post_plot(bayes_table, Color = crcblue) +
+  theme(text=element_text(size=10))
+```
+
+# Continuous priors - the Beta distribution
+
+## Step 1: Prior distribution
+- $\color{VassarRed}{\text{Before giving out the survey}}$, we need to specify a prior distribution for unknown parameter $p$.
+- Previously, $p$ can take 6 possible values
+\begin{eqnarray}
+p = \{0.3, 0.4, 0.5, 0.6, 0.7, 0.8\}.
+\label{eq:dining:p}
+\end{eqnarray}
+- And a discrete prior distribution:
+\begin{eqnarray}
+\pi_{owner}(p)= (0.125, 0.125, 0.250, 0.250, 0.125, 0.125).
+\label{eq:dining:expertprior}
+\end{eqnarray}
+
+## Step 1: Prior distribution
+```{r, size = "footnotesize"}
+bayes_table
+```
+
+- Anything unsatisfactory?
+
+## Move to continuous priors
+- A limitation of specifying a discrete prior for $p$
+    - If a plausible value is not specified in the prior distribution (e.g. $p = 0.2$), it will be assigned a 0 probability in the posterior distribution.
+\pause
+- Ideally, we want a distribution that allows $p$ to be any value in [0, 1].
+- The continuous Uniform distribution:
+    - Any value of $p$ is equally likely.
+    - The probability density function of the continuous Uniform on the interval $[a, b]$ is
+\begin{eqnarray}
+\pi(p) = 
+\begin{cases}
+  \frac{1}{b - a} & \text{for }a \le p \le b,\\    
+  0     		& \text{for }p < a \,\, \text{or } p > b.
+\end{cases}
+\label{eq:Binomial:Continuous:Uniform}
+\end{eqnarray}
+    - $p \sim \textrm{Uniform}(0,1)$: a very special case of $p$.
+- The Beta distribution!
+
+## The Beta distribution
+- Notation: $\textrm{Beta}(a, b)$.
+- For a random variable falling between 0 and 1, suitable for proportion $p$.
+- Beta distribution has two shape parameters $a$ and $b$.
+- Probability density function (pdf) is:
+\begin{eqnarray}
+\pi(p) = \frac{1}{B(a, b)} p^{a - 1} (1 - p)^{b - 1}, \, \, 0 \le p \le 1.
+\end{eqnarray}
+    - $B(a, b)$ is the Beta function $B(a, b) = \frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)}$.
+    - $\Gamma$ is the Gamma function.
+    \pause
+    - Continuous Uniform on [0, 1] is a special case of Beta with $a=b=1$: $\textrm{Uniform}(0, 1) = \textrm{Beta}(1, 1)$
+
+## Examples of Beta curves
+```{r, echo = FALSE, fig.align = "center"}
+betapars <- matrix(c(0.5, 0.5,
+                     0.5, 1,
+                     0.5, 2,
+                     1, 0.5,
+                     1, 1,
+                     1, 2,
+                     4, 0.5,
+                     4, 1,
+                     4, 2),
+                     9, 2, byrow = TRUE)
+p <- seq(.001, .999, length.out = 100)
+BETA <- NULL
+for (j in 1:9){
+  df <- data.frame(p = p, Density = dbeta(p,
+                    betapars[j, 1], betapars[j, 2]))
+  df$Type <-  paste("Beta(", betapars[j, 1],
+                    ",", betapars[j, 2], ")",
+                    sep = "")
+  BETA <- rbind(BETA, df)
+}
+ggplot(BETA, aes(p, Density)) +
+  geom_line(color = crcblue, size = 1.5) +
+  facet_wrap(~ Type, scale = "free") +
+  increasefont() +
+  theme(axis.text=element_blank())
+```
+
+## Choose a Beta curve to represent prior opinion
+- Prior opinion: values of $p$ and associated probabilities.
+- Difficult to guess values of $a$ and $b$ in $\textrm{Beta}(a,b)$.
+- Solution: specifying a Beta prior by specification of quantiles of the distribution.
+\pause
+
+    - Quantiles are about rank order of values.
+    - e.g. Middle quantile/50-th percentile: median.
+    - \texttt{beta\_quantile()} function in R: inputs a probability measure $p$ and outputs the value of $x$ such that $Prob(X <=x) = p$. (e.g. $x = 0.408$ when $p = 0.5$ for $\textrm{Beta}(7, 10)$)
+
+## Choose a Beta curve to represent prior opinion
+```{r fig.height = 2.8, fig.width = 2.8, size = "footnotesize", fig.align = "center"}
+beta_quantile(0.5, c(7, 10), Color = crcblue) +
+  theme(text=element_text(size=8))
+```
+
+## Use \texttt{beta.select()} to choose a Beta curve
+- The \texttt{beta.select()} function needs us to 
+    - first think about specifying two quantiles
+    - then it finds the Beta curve that matches with these quantiles
+    \pause
+
+- Example:
+    - Suppose we believe that $p_{50} = 0.55$ (50-th quantile)
+    - Suppose we also believe that $p_{90} = 0.8$ (90-th quantile)
+    - Input these two sets of values into \texttt{beta.select()}
+    
+```{r, size = "footnotesize"}
+beta.select(list(x = 0.55, p = 0.5),
+            list(x = 0.80, p = 0.9))
+```
+
+\pause
+
+- Exercise 1: Verify that $\textrm{Beta}(3.06, 2.56)$ has $p_{50} = 0.55$ and $p_{90} = 0.8$. (Hint: use the \texttt{beta\_quantile()} function)
+- Exercise 2: Come up with your own Beta prior distribution, and share it with your neighbors.
+
+# Updating the Beta prior
+
+## Step 2: Data/likelihood of proportion $p$
+- Recall that
+    - The Tokyo Express owner gives a survey to 20 customers, and 12 respond that their favorite day is Friday.
+    - The data/likelihood is a function of the quantity of interest, $p$.
+    - It is a Binomial experiment, and 
+\begin{eqnarray}
+P(Y=y) = {n \choose y} p^y (1 - p)^{n - y}, y = 0, \cdots, n,
+\end{eqnarray}
+where $n$ is the number of trials and $p$ is the success probability.
+\pause
+- Exercise: Write out the likelihood function for $n = 20$ and $y = 12$.
+\pause
+- Solution:
+\begin{eqnarray}
+\textrm{Likelihood} = L(p) = {20 \choose 12} p ^ {12} (1 - p) ^ 8.
+\end{eqnarray}
+
+## Bayes' rule for continuous priors
+- The likelihood function is the same, regardless of the prior distribution.
+- Recall: the Bayes' rule for a discrete parameter has the form
+\begin{eqnarray}
+\pi(p_i \mid y)  = \frac{\pi(p_i) \times L(p_i)} {\sum_j \pi(p_j) \times L(p_j)}
+\end{eqnarray}
+- What about for continuous $p$? Unfortunately we can not list each value of $p$ anymore.
+\pause
+- Solution: With continuous $p$, the denominator changes from summation $\Sigma$ to integration $\int$.
+- Since $\int \pi(p) \times L(p) dp = f(y)$ is fixed, we can write the Bayes' rule for continuous $p$ in proportional sign:
+\begin{eqnarray}
+\pi(p \mid y) \propto  \pi(p) \times L(p) .
+\end{eqnarray}
+
+## Step 3: Derive the posterior
+\begin{eqnarray}
+\pi(p \mid y) \propto  \pi(p) \times L(p)
+\end{eqnarray}
+
+- For prior $\pi(p)$, we have $p \sim \textrm{Beta}(3.06, 2.56)$.
+- For data/likelihood $L(p)$, we have $Y \sim \textrm{Binomial}(20,p)$.
+- We need to derive $\pi(p \mid y)$.
+\pause
+
+- Exercise: Derive $\pi(p \mid y)$ with the setup below.
+    - The prior distribution:
+      \begin{eqnarray}
+      \pi(p) = \frac{1}{B(3.06, 2.56)}p^{3.06-1}(1-p)^{2.56-1}. \nonumber
+      \end{eqnarray}
+    - The likelihood:
+      \begin{eqnarray}
+      f(Y =12 \mid p) = L(p) = {20 \choose 12}p^{12}(1-p)^{8}.\nonumber
+      \end{eqnarray}
+    - The posterior?
+    
+## Step 3: Derive the posterior cont'd
+- The posterior:
+  \begin{eqnarray}
+  \pi(p \mid Y = 12) &\propto& \pi(p) \times f(Y = 12 \mid p) \nonumber \\ \pause
+  &=&  \frac{1}{B(3.06, 2.56)}p^{3.06-1}(1-p)^{2.56-1} \times \nonumber \\ 
+  && {20 \choose 12}p^{12}(1-p)^{8} \nonumber \\ \pause
+  \texttt{[drop the constants]} &\propto& p^{12}(1-p)^{8}p^{3.06-1}(1-p)^{2.56-1} \nonumber \\
+  \texttt{[combine the powers]} &=& p^{15.06-1}(1-p)^{10.56-1}.
+  \end{eqnarray}
+- That is, 
+  \begin{eqnarray}
+  \pi(p \mid Y = 12) \propto p^{15.06-1}(1-p)^{10.56-1},\nonumber
+  \end{eqnarray}
+  which means \pause
+  \begin{eqnarray}
+  p \mid Y = 12 \sim \textrm{Beta}(15.06, 10.56).\nonumber
+\end{eqnarray}
+
+## From Beta prior to Beta posterior: conjugate priors
+- The prior distribution:
+  \begin{eqnarray}
+  p \sim \textrm{Beta}(a, b)\nonumber
+  \end{eqnarray}
+- The sampling density:
+  \begin{eqnarray}
+  Y \sim \textrm{Binomial}(n, p)\nonumber
+  \end{eqnarray}
+- The posterior distribution:
+  \begin{eqnarray}
+  p \mid Y = y \sim \textrm{Beta}(a + y, b + n - y)\nonumber
+  \end{eqnarray}
+- Conjugate priors: from Beta prior to Beta posterior.
+\pause
+\begin{table}[htb]
+%\caption{\label{table:betaupdate} Updating the beta prior.}
+\begin{center}
+\begin{tabular}{|c|c|c|} \hline
+Source & Successes & Failures \\ \hline
+Prior & $a$ & $b$ \\
+Data/Likelihood & $y$  & $n-y$ \\
+Posterior & $a + y$ & $b + n - y$ \\ \hline
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}
+
+## Use R/RStudio to compute and plot the posterior
+\begin{eqnarray}
+p \mid Y = y \sim \textrm{Beta}(a + y, b + n - y)\nonumber
+\end{eqnarray}
+
+
+```{r, size = "footnotesize"}
+ab <- c(3.06, 2.56)
+yny <- c(12, 8)
+(ab_new <- ab + yny)
+```
+
+## Use R/RStudio to compute and plot the posterior cont'd
+
+\columnsbegin
+\column{.6\textwidth}
+```{r echo = FALSE, fig.height=5, fig.width=5}
+ggplot(data.frame(x=c(0, 1)), aes(x)) +
+  stat_function(fun=dbeta, geom="line",
+                aes(linetype="solid"),
+                size=1.5, color = crcblue,
+                args=list(shape1=ab[1],
+                          shape2=ab[2])) +
+  stat_function(fun=dbeta, geom="line",
+                aes(linetype="dashed"),
+                size=1.5, color = crcblue,
+                args=list(shape1=ab_new[1],
+                          shape2=ab_new[2])) +
+  xlab("p") + ylab("Density") +
+  theme(legend.position = "none") +
+  annotate(geom = "text", x = .15, y = 1.2,
+           size = 8, label = "Prior") +
+  annotate(geom = "text", x = .85, y = 3,
+           size = 8, label = "Posterior") +
+  increasefont()
+```
+\column{.3\textwidth}
+\pause
+
+- Exercise 1: Compare prior mean 0.544 and posterior mean 0.588. (Recall that sample mean is 0.6.)
+- Exercise 2: Compare the spreads of the two curves.
+    
+\columnsend
+
+
+# Bayesian inference with continuous priors
+
+## Bayesian hypothesis testing
+- Suppose one of the Tokyo Express's workers claims that at least 75\% of the customers prefer Friday. Is this a reasonable claim?
+\pause
+- From a Bayesian viewpoint, 
+    - Find the posterior probability that $p >= 0.75$.
+    - Make a decision based on the value of the posterior probability.
+    - If the probability is small, we can reject this claim.
+
+## Bayesian hypothesis testing cont'd
+\columnsbegin
+\column{.6\textwidth}
+```{r, size = "footnotesize"}
+beta_area(lo = 0.75, hi = 1.0, shape_par = c(15.06, 10.56), 
+          Color = crcblue) +
+  theme(text=element_text(size=18))
+```
+
+\column{.3\textwidth}
+\pause
+
+- Posterior probability is only 4\%, reject the claim.
+- Exercise: What about a claim ``at most 30\% of the customers prefer Friday"?
+    
+\columnsend
+
+## Bayesian hypothesis testing cont'd
+When the posterior distribution is known...
+\pause
+
+- Exact solution: use the \texttt{beta\_area()} function in the \texttt{ProbBayes} package and/or the \texttt{pbeta()} R function
+    
+```{r, eval = FALSE, size = "footnotesize"}
+beta_area(lo = 0.75, hi = 1.0, shape_par = c(15.06, 10.56))
+```
+    
+```{r, size = "footnotesize"}
+pbeta(1, 15.06, 10.56) - pbeta(0.75, 15.06, 10.56)
+```
+
+\pause
+
+- Approximation through Monte Carlo simulation using the \texttt{rbeta()} R function
+
+```{r, size = "footnotesize"}
+S <- 1000
+BetaSamples <- rbeta(S, 15.06, 10.56)
+sum(BetaSamples >= 0.75)/S
+```
+
+## Bayesian credible intervals
+- Consider an interval that we are confident contains $p$.
+- Such an interval provides an uncertainty estimate for our parameter $p$.
+- A 90\% Bayesian credible interval is an interval contains 90\% of the posterior probability.
+
+## Bayesian credible intervals cont'd
+\columnsbegin
+\column{.6\textwidth}
+```{r, size = "footnotesize", fig.align = "center"}
+beta_interval(0.9, c(15.06, 10.56), Color = crcblue) +
+  theme(text=element_text(size=18))
+```
+\column{.3\textwidth}
+\pause
+
+- The middle 90\%.
+- Interpretation: different from a confidence interval.
+- Exercise: Construct a middle 98\% credible interval for $p$.
+    
+\columnsend
+
+## Bayesian credible intervals cont'd
+When the posterior distribution is known...
+\pause
+
+- Exact solution: use the \texttt{beta\_interval()} function in the \texttt{ProbBayes} package ($\color{VassarRed}{\text{only the middle 90\%}}$) and or the \texttt{qbeta()} R function ($\color{VassarRed}{\text{not necessarily the middle 90\%}}$)
+    
+```{r, eval = FALSE, size = "footnotesize"}
+beta_interval(0.9, c(15.06, 10.56), Color = crcblue)
+```
+
+```{r, size = "footnotesize"}
+c(qbeta(0.05, 15.06, 10.56), qbeta(0.95, 15.06, 10.56))
+```
+
+\pause
+
+- Approximation through Monte Carlo simulation using the \texttt{rbeta()} R function ($\color{VassarRed}{\text{not necessarily the middle 90\%}}$)
+  
+```{r, size = "footnotesize"}
+S <- 1000; BetaSamples <- rbeta(S, 15.06, 10.56)
+quantile(BetaSamples, c(0.05, 0.95))
+```
+    
+    
+## Bayesian prediction
+- Suppose the Tokyo Express owner gives out another survey to $m$ customers, how many would prefer Friday?
+- The predictive distribution: $\tilde{Y} \mid Y = y$.
+\pause
+
+    - The exact prediction:
+    \begin{eqnarray*}
+    \tilde{Y} \mid Y = y \sim \textrm{Beta-Binomial}(m, a + y, b + n - y).
+    \end{eqnarray*}
+    
+    - Prediction through simulation ($\color{VassarRed}{\text{our focus}}$):
+    \begin{eqnarray*}
+    \text{sample}\,\, p \sim {\rm{Beta}}(a + y, b + n - y) &\rightarrow& \text{sample}\,\,         \tilde{y} \sim {\rm{Binomial}}(m, p)\\
+    \end{eqnarray*}
+
+## Use R/RStudio to make Bayesian predictions
+```{r, size = "footnotesize"}
+S <- 1000
+a <- 3.06; b <- 2.56
+n <- 20; y <- 12
+m <- 20
+pred_p_sim <- rbeta(S, a + y, b + n - y)
+pred_y_sim <- rbinom(S, m, pred_p_sim)
+sum(pred_y_sim >=5 & pred_y_sim <= 15)/S
+```
+
+## Use R/RStudio to make Bayesian predictions
+
+```{r, echo = FALSE, warning = FALSE}
+a <- 3.06; b <- 2.56
+n <- 20; y <- 12
+prob <- pbetap(c(a + y, b + n - y), 20, 0:20)
+T1 <- data.frame(Y = 0:10,
+                 Probability = round(prob[1:11], 3))
+T2 <- data.frame(Y = 11:20,
+                 Probability = round(prob[12:21], 3))
+T2 <- rbind(T2, data.frame(Y = 21, Probability = 999))
+
+set.seed(123)
+S <- 1000
+pred_p_sim <- rbeta(S, a + y, a + b + n - y)
+pred_y_sim <- rbinom(S, n, pred_p_sim)
+
+data.frame(Y = pred_y_sim) %>%
+  group_by(Y) %>% summarize(N = n()) %>%
+  mutate(Probability = N / sum(N),
+         Type = "Simulated")  %>%
+  select(Type, Y, Probability) -> S1
+
+S2 <- data.frame(Type = "Exact",
+                 Y = 0:20,
+                 Probability = prob)
+
+S <- rbind(S1, S2)
+ggplot(S, aes(Y, Probability)) +
+  geom_segment(aes(xend = Y, yend = 0),
+               size = 3,
+               lineend = "butt",
+               color = crcblue) +
+  facet_wrap(~ Type, ncol=1) +
+  theme(text=element_text(size=18))
+```
+
+## Bayesian predictive checking
+- Bayesian prediction is $\color{VassarRed}{\text{posterior predictive}}$
+\small
+\begin{eqnarray*}
+\text{sample}\,\, p \sim {\rm{Beta}}(a + y, b + n - y) &\rightarrow& \text{sample}\,\, \tilde{y} \sim {\rm{Binomial}}(m, p)\\
+\end{eqnarray*}
+- We can perform $\color{VassarRed}{\text{posterior predictive checking}}$ through simulation
+\begin{eqnarray*}
+\text{sample}\,\, p^{(1)} \sim {\rm{Beta}}(a + y, b + n - y) &\rightarrow& \text{sample}\,\, \tilde{y}^{(1)} \sim {\rm{Binomial}}({\color{red}n}, p^{(1)})\\
+\text{sample}\,\, p^{(2)} \sim {\rm{Beta}}(a + y, b + n - y) &\rightarrow& \text{sample}\,\, \tilde{y}^{(2)} \sim {\rm{Binomial}}({\color{red}n}, p^{(2)})\\
+&\vdots& \\
+\text{sample}\,\, p^{(S)} \sim {\rm{Beta}}(a + y, b + n - y) &\rightarrow& \text{sample}\,\, \tilde{y}^{(S)} \sim {\rm{Binomial}}({\color{red}n}, p^{(S)})\\
+\end{eqnarray*}
+
+\normalsize
+The sample  $\{\tilde{y}^{(1)}, ..., \tilde{y}^{(S)}\}$ is an approximation to the posterior predictive distribution that can be used for model checking. 
+
+## Use R/Rstudio to perform posterior predictive checking
+```{r, size = "footnotesize"}
+S <- 1000
+a <- 3.06; b <- 2.56
+n <- 20; y <- 12
+newy = as.data.frame(rep(NA, S))
+names(newy) = c("y")
+
+set.seed(123)
+for (s in 1:S){
+  pred_p_sim <- rbeta(1, a + y, b + n - y)
+  pred_y_sim <- rbinom(1, n, pred_p_sim)
+  newy[s,] = pred_y_sim 
+}
+
+```
+
+## Use R/Rstudio to perform posterior predictive checking cont'd
+\columnsbegin
+\column{.6\textwidth}
+```{r, size = "footnotesize", fig.height = 2, fig.width = 2, fig.align = "center"}
+ggplot(data=newy, aes(newy$y)) + 
+  geom_histogram(breaks=seq(0, 20, by=0.5), fill = crcblue) +
+  annotate("point", x = 12, y = 0, colour = "red", size = 5) +
+  xlab("y") + theme(text=element_text(size=10))
+```
+
+\column{.4\textwidth}
+\pause
+
+- The observed $y = 12$ is plotted as a red dot. The observed value of $y$ is consistent with simulations of replicated data from this predictive distribution.
+  
+\columnsend
+
+## Use R/Rstudio to perform posterior predictive checking cont'd
+- More formally, one can calculate the following probabilities:
+
+\begin{equation}
+Prob(y > \tilde{y} \mid y), \,\,\, \text{or}\,\,\, 1 - Prob(y > \tilde{y} \mid y).
+\end{equation}
+
+- If either probability is small, it suggests the model does not describe $y$ very well.
+\pause
+
+```{r, size = "footnotesize"}
+sum(newy > y)/S
+1 - sum(newy > y)/S
+```
+
+- Since 0.407 and 0.593 are not small, it suggests the model describe $y$ well. The inference passes the posterior predictive checking. 
+
+
+# Recap
+
+## Recap
+- Bayesian inference procedure:
+    - Step 1: express an opinion about the location of the proportion $p$ before sampling (prior).
+    - Step 2: take the sample and record the observed proportion (data/likelihood).
+    - Step 3: use Bayes' rule to sharpen and update the previous opinion about $p$ given the information from the sample (posterior).
+
+\pause
+
+- For Binomial data/likelihood, the Beta distributions are conjugate priors.
+    - The prior distribution: $p \sim \textrm{Beta}(a, b)$.
+    - The sampling density: $Y \sim \textrm{Binomial}(n, p)$.
+    - The posterior distribution: $p \mid Y = y \sim \textrm{Beta}(a + y, b + n - y)$.
+   
+\pause
+
+- Bayesian inferences (exact vs simulated)
+    - Bayesian hypothesis testing \& Bayesian credible intervals
+    - Bayesian predictions
+    - Bayesian posterior predictive checking
