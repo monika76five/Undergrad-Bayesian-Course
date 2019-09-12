@@ -1,0 +1,164 @@
+\documentclass[11pt]{article}
+\usepackage[top=2.1cm,bottom=2cm,left=2cm,right= 2cm]{geometry}
+%\geometry{landscape}                % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{changepage}
+\usepackage{lscape}
+\usepackage{ulem}
+\usepackage{multicol}
+\usepackage{dashrule}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{enumerate}
+\newcommand{\urlwofont}[1]{\urlstyle{same}\url{#1}}
+\newcommand{\degree}{\ensuremath{^\circ}}
+\newcommand{\hl}[1]{\textbf{\underline{#1}}}
+
+
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+
+\begin{document}
+
+
+\enlargethispage{\baselineskip}
+
+Fall 2019 \hfill Jingchen (Monika) Hu\\
+
+\begin{center}
+{\huge MATH 347 Homework 2 (Total 30 points)}	\\
+Due: Tuesday 9/24, at the beginning of the class
+\end{center}
+\vspace{0.5cm}
+
+\textbf{Name:} \rule{6cm}{0.5pt}\\
+
+
+{\bf
+\begin{itemize}
+\item Print out this cover page and staple with your homework.
+\item Show all work. Incomplete solutions will be given no credit.
+\item You may prepare either hand-written or typed solutions,
+but make sure that they are legible.
+Answers that cannot be read will be given no credit.
+\item R graphical outputs must be printed instead of hand-drawn.
+
+\end{itemize}
+}
+
+\begin{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    \item 
+    ({\it{6 points; 2 points each part}}) \\
+    Recall the Tokyo Express dining preference example covered in class. Suppose the Tokyo Express owner in the college town gives another survey to a different group of students. This time, he gives to 30 students and receive 10 of them saying Friday is their preferred day to eat out. Use the owner's prior (restated below) and calculate the following posterior probabilities.
+\begin{eqnarray}
+p &=& \{0.3, 0.4, 0.5, 0.6, 0.7, 0.8\} \nonumber \\
+\pi_{owner}(p) &=& (0.125, 0.125, 0.250, 0.250, 0.125, 0.125) \nonumber
+\end{eqnarray}
+\begin{enumerate}
+
+\item The probability that 30\% of the students prefer eating out on Friday.
+
+\item The probability that more than half of the students prefer eating out on Friday.
+
+\item The probability that between 20\% and 40\% of the students prefer eating out on Friday.
+
+\end{enumerate}
+
+
+
+    \item
+    ({\it{8 points; 2 points each part}}) \\
+     Revisit the figure in lecture slides page 23, where nine different Beta curves are displayed.  In the context of Tokyo Express customers' dining preference example where $p$ is the proportion of students preferring Friday, interpret the following prior choices in terms of the opinion of $p$. For example, $\textrm{Beta}(0.5, 0.5)$ represents the prior belief the extreme values  $p = 0$ and $p = 1$ are more probable and $p = 0.5$ is the least probable. In the customers' dining preference example, specifying a $\textrm{Beta}(0.5, 0.5)$ prior indicates the owner thinks the students' preference of dining out on Friday is either very strong or very weak.
+
+\begin{enumerate}
+\item  Interpret the $\textrm{Beta}(1, 1)$ curve.
+
+\item Interpret the $\textrm{Beta}(0.5, 1)$ curve.
+
+\item Interpret the $\textrm{Beta}(4, 2)$ curve.
+
+\item Compare the opinion about $p$ expressed by the two Beta curves: $\textrm{Beta}(4, 1)$ and $\textrm{Beta}(4, 2)$.
+\end{enumerate}
+
+    \item
+    ({\it{8 points; 2 points each part}}) \\
+    Use any of the functions from this list i) \texttt{dbeta()}, ii) \texttt{pbeta()}, iii) \texttt{qbeta()}, iv) \texttt{rbeta()}, v) \texttt{beta\_area()}, and vi) \texttt{beta\_quantile()} to answer the following questions about Beta probabilities. 
+
+\begin{enumerate}
+\item The density of $\textrm{Beta}(0.5, 0.5)$ at $p = \{0.1, 0.5, 0.9, 1.5\}$. 
+
+\item The probability $P(0.2 \le p \le 0.6)$ if $p \sim \textrm{Beta}(6, 3)$.
+
+\item The quantile of the $\textrm{Beta}(10, 10)$ distribution at  the probability values  in the set $ \{0.1, 0.5, 0.9, 1.5\}$.
+
+\item A sample of 100 random values from $\textrm{Beta}(4, 2)$.
+\end{enumerate}
+
+
+%    \item 
+%    ({\it{4 points; 2 points each part}}) \\
+%    Consider another dining survey conducted by a restaurant owner in New York. The owner is also interested in knowing about the proportion $p$ of students prefer eating out on Friday. He believes that its $0.4$ quantile is $0.7$ and $0.8$ quantile is $0.9$. Suppose you are going to use a beta prior distribution. 
+%
+%\begin{enumerate}
+%
+%\item Find the values of the shape parameters $a$ and $b$ in ${\rm Beta}(a, b)$ to represent the restaurant owner's belief.
+%
+%\item Confirm your beta prior by taking a simulated sample from the prior predictive simulation. Hint: use \texttt{rbeta} to simulate a sample from your selected beta distribution, then simulate a new $\tilde{y}$ from your Binomial data model (suppose the number of responses is $n = 20$). Graph and/or calculate the quantiles of the simulated $\tilde{y}$ sample from the predictive distribution to check  the restaurant owner's prior belief.
+%
+%\end{enumerate}
+
+
+    \item
+    ({\it{4 points}}) \\
+    If the proportion has a 
+\textrm{Beta}($a, b$) prior and one observes $Y$ from a \textrm{Binomial} distribution with parameters $n$ and $p$, then if one observes $Y = y$, then the posterior density of $p$ is 
+\textrm{Beta}($a + y, b + n - y$).
+
+
+Recall that the mean of a ${\rm Beta}(a, b)$ random variable following  is $\frac{a}{a+b}$. Show that the posterior mean of $p \mid Y = y \sim {\rm Beta}(a + y, b + n - y)$ is a weighted average of the prior mean of $p \sim {\rm Beta}(a, b)$ and the sample mean $\hat{p} = \frac{y}{n}$.  Find the two weights and explain their implication for the posterior being a combination of prior and data. Comment  how Bayesian inference allows collected data to sharpen one's belief from prior to posterior.
+
+
+    \item 
+    ({\it{4 points}}) \\
+    Derivation exercise of the Beta posterior. If the proportion has a 
+\textrm{Beta}($a, b$) prior and one samples $Y$ from a \textrm{Binomial} distribution with parameters $n$ and $p$, then if one observes $Y = y$, then the posterior density of $p$ is 
+\textrm{Beta}($a + y, b + n - y$). You need to perform the complete derivation, i.e. keep the constants.
+
+%    \item 
+%    ({\it{10 points; 2 points each part}}) \\
+%    Hoff 3.1
+%    \item
+%    ({\it{9 points; 3 points each part}}) \\
+%    Hoff 3.3
+%    \item
+%    ({\it{10 points; 5 points each part}}) \\
+%    Hoff 3.4 (d) (e)
+%    \item
+%    ({\it{6 points; 3 points each part}}) \\
+%    Hoff 3.9 (a) (b)
+
+
+
+
+
+
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+\end{document} 
