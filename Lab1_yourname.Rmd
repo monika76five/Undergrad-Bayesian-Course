@@ -1,0 +1,137 @@
+---
+output:
+  pdf_document: default
+header-includes:
+  - \usepackage{color}
+  - \usepackage[dvipsnames]{xcolor}
+---
+----
+ Fall 2019: MATH 347 Bayesian Statistics
+---
+
+```{r}
+
+```
+## \textcolor{RoyalBlue}{Lab 1: Mixture of Beta Priors}
+#### Author:_____(Insert your name here) _____
+
+#### \textcolor{Bittersweet}{Total Grade for Lab 1: /15} 
+#### \textcolor{Bittersweet}{Comments (optional)} 
+
+## \textcolor{RoyalBlue}{Template for lab report}
+\textbf{Instructions:} This is the template you will use to type up your responses to the exercises. To produce a document that you can print out and turn in just click on Knit PDF above. All you need to do to complete the lab is to type up your BRIEF answers and the R code (when necessary) in the spaces provided below. 
+
+It is strongly recommended that you knit your document regularly (minimally after answering each exercise) for two reasons. 
+
+  1. Ensure that there are no errors in your code that would prevent the document from knitting.
+  2. View the instructions and your answers in a more legible, attractive format.
+
+
+```{r, eval=FALSE}
+# Any text BOTH preceded by a hashtag AND within the ```{r} ``` code chunk is a comment. 
+# R indicates a comment by turning the text green in the editor, and brown in the knitted
+# document. 
+# Comments are not treated as a command to be interpreted by the computer.
+# They normally (briefly!) describe the purpose of your command or chunk in plain English.
+# However, for this class, they will have a different goal, as the text above and below 
+# each chunk should sufficiently describe the chunk's contents.
+# For this class, comments will be used to indicate where your code should go, or to give
+# hints for what the code should look like.
+
+```
+
+## \textcolor{RoyalBlue}{Mixture of Beta Priors}
+
+Estimate the probability $p$ of teen recidivism based on a study in which there were $n = 43$ individuals released from incarceration and $y = 15$ re-offenders within 36 months.
+
+#### \textcolor{RoyalBlue}{Exercise 1: } Using a $\textrm{Beta}(2,8)$ prior for $p$, plot the prior $\pi(p)$ and the posterior $\pi(p \mid y)$ as functions of $p$. Find the posterior mean and standard deviation of $p$. Find a $95\%$ quantile-based credible interval. You can use either the exact solution or approximation through Monte Carlo simulation.
+
+```{r, eval=FALSE}
+# If you use the exact solution...
+# Here is some sample script to plot multiple Beta densities on the same graph
+# Delete "eval=FALSE" above to see output
+
+require(ggplot2)
+
+ggplot(data = data.frame(p = c(0, 1)), aes(p)) + 
+  stat_function(fun = dbeta, args = list(shape1 = 1, shape2 = 1), aes(color = "Beta(1, 1)")) +
+  stat_function(fun = dbeta, args = list(shape1 = 5, shape2 = 5), aes(color = "Beta(5, 5)")) + 
+  stat_function(fun = dbeta, args = list(shape1 = 4, shape2 = 6), aes(color = "Beta(4, 6)")) +
+  stat_function(fun = dbeta, args = list(shape1 = 6, shape2 = 4), aes(color = "Beta(6, 4)")) +
+  ylab("Density")
+```
+
+```{r, eval=FALSE}
+# If you use approximation through Monte Carlo simulation...
+# Here is some sample script to generate Beta samples and
+# plot multiple Beta densities on the same graph
+# Delete "eval=FALSE" above to see output
+require(reshape2)
+require(ggplot2)
+
+set.seed(123)
+S <- 1000
+Beta11samples <- rbeta(S, shape1 = 1, shape2 = 1)
+Beta55samples <- rbeta(S, shape1 = 5, shape2 = 5)
+Beta46samples <- rbeta(S, shape1 = 4, shape2 = 6)
+Beta64samples <- rbeta(S, shape1 = 6, shape2 = 4)
+df <- as.data.frame(cbind(seq(1:S), Beta11samples, Beta55samples, Beta46samples, Beta64samples))
+names(df) <- c("Index", "Beta(1, 1)", "Beta(5, 5)", "Beta(4, 6)", "Beta(6, 4)")
+df_long <- melt(df, id = "Index")
+
+ggplot(data = df_long, aes(value, colour = variable)) + 
+  geom_density() + 
+  xlab("p") + ylab("Density")
+```
+#### \textcolor{Bittersweet}{Grade for Exercise 1: /5} 
+#### \textcolor{Bittersweet}{Comments: }
+
+
+#### \textcolor{RoyalBlue}{Exercise 2: } Repeat Exercise 1, but using a $\textrm{Beta}(8,2)$ prior for $p$.
+
+#### \textcolor{Bittersweet}{Grade for Exercise 2: /5} 
+#### \textcolor{Bittersweet}{Comments: }
+
+
+
+#### \textcolor{RoyalBlue}{Exercise 3: } Consider the following prior distribution for $p$, a $75-25\%$ mixture of a $\textrm{Beta}(2,8)$ and a $\textrm{Beta}(8,2)$ prior distribution. Plot this prior distribution and compare it to the priors in Exercise 1 and Exercise 2. Describe what sort of prior opinion this may represent.
+$$
+\pi(p) = \frac{1}{4}\frac{\Gamma(10)}{\Gamma(2)\Gamma(8)}[3p(1-p)^7 + p^7(1-p)],
+$$
+
+
+```{r, eval=FALSE}
+# If you use the exact solution...
+# Here is some sample script to create density of a 75%-25% mixture Beta prior
+# Delete "eval=FALSE" above to see output
+
+p <- seq(0.001, 0.999, length = 1000)
+mixture <- 0.75*dbeta(p, 1, 1) + 0.25*dbeta(p, 5, 5)
+```
+
+```{r, eval=FALSE}
+# If you use approximation through Monte Carlo simulation...
+# Here is some sample script to generate draws of a 75%-25% mixture Beta prior
+# Delete "eval=FALSE" above to see output
+
+set.seed(123)
+S <- 1000
+MixtureBetaSamples <- rep(NA, S)
+for (s in 1:S){
+  component <- rbernoulli(1, 0.75)
+  if (component == 1){
+    MixtureBetaSamples[s] <- rbeta(1, shape1 = 1, shape2 = 1)
+  }
+  else
+    MixtureBetaSamples[s] <- rbeta(1, shape1 = 5, shape2 = 5)
+}
+```
+#### \textcolor{Bittersweet}{Grade for Exercise 3: /5} 
+#### \textcolor{Bittersweet}{Comments: }
+
+  
+  
+  
+
+
+
