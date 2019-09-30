@@ -1,0 +1,187 @@
+---
+output:
+  pdf_document: default
+header-includes:
+  - \usepackage{color}
+  - \usepackage[dvipsnames]{xcolor}
+---
+----
+ Fall 2019: MATH 347 Bayesian Statistics
+---
+
+```{r}
+
+```
+## \textcolor{RoyalBlue}{Lab 2: Bayesian Inference for Unknown Mean $\mu$}
+#### Author:_____(Insert your name here) _____
+
+#### \textcolor{Bittersweet}{Total Grade for Lab 2: /20} 
+#### \textcolor{Bittersweet}{Comments (optional)} 
+
+## \textcolor{RoyalBlue}{Template for lab report}
+\textbf{Instructions:} This is the template you will use to type up your responses to the exercises. To produce a document that you can print out and turn in just click on Knit PDF above. All you need to do to complete the lab is to type up your BRIEF answers and the R code (when necessary) in the spaces provided below. 
+
+It is strongly recommended that you knit your document regularly (minimally after answering each exercise) for two reasons. 
+
+  1. Ensure that there are no errors in your code that would prevent the document from knitting.
+  2. View the instructions and your answers in a more legible, attractive format.
+
+
+```{r, eval=FALSE}
+# Any text BOTH preceded by a hashtag AND within the ```{r} ``` code chunk is a comment. 
+# R indicates a comment by turning the text green in the editor, and brown in the knitted
+# document. 
+# Comments are not treated as a command to be interpreted by the computer.
+# They normally (briefly!) describe the purpose of your command or chunk in plain English.
+# However, for this class, they will have a different goal, as the text above and below 
+# each chunk should sufficiently describe the chunk's contents.
+# For this class, comments will be used to indicate where your code should go, or to give
+# hints for what the code should look like.
+
+```
+
+## \textcolor{RoyalBlue}{Bayesian inference summary}
+
+We collect a  sequence of continuous observations that  are assumed identically and independently distributed as $\textrm{Normal}(\mu, \sigma)$, and a normal prior is assigned to the mean parameter $\mu$.
+
+
+- The sampling model:
+\begin{eqnarray}
+Y_1, \cdots, Y_n \mid \mu, \sigma &\overset{i.i.d.}{\sim}& {\rm{Normal}}(\mu, \sigma) %\equiv {\rm{Normal}}(\mu, \frac{1}{\phi}).
+\end{eqnarray}
+When $\sigma$ (or $\phi$) is  known, mean $\mu$ is the only parameter in the likelihood. 
+
+- he prior distribution:
+\begin{eqnarray}
+\mu  &\sim& {\rm{Normal}}(\mu_0, \sigma_0)  %\equiv {\rm{Normal}}(\mu_0, \frac{1}{\phi_0})
+\end{eqnarray}
+
+- After $Y_1 = y_1, ..., Y_n = y_n$ are observed, the posterior distribution for the mean $\mu$ is another normal distribution with mean $\frac{\phi_0 \mu_0 + n\phi\bar{y} }{\phi_0 + n \phi}$ and precision $\phi_0 + n \phi$ (thus standard deviation $\sqrt{\frac{1}{\phi_0 + n \phi}}$):
+
+\begin{eqnarray}
+\mu \mid y_1, \cdots, y_n, \sigma \sim {\rm{Normal}}\left(\frac{\phi_0 \mu_0 + n\phi\bar{y} }{\phi_0 + n \phi}, \sqrt{\frac{1}{\phi_0 + n \phi}}\right).
+\label{eq:normal:posterior}
+\end{eqnarray}
+
+
+
+## \textcolor{RoyalBlue}{The CE data example}
+Obtain the CE data sample from Moodle (a .csv file). Below is the sample R script to take log transformation of the \texttt{TotalExpLastQ} variable. 
+```{r, eval=FALSE}
+library(tidyverse)
+CEsample <- read_csv("CEsample1.csv")
+CEsample$LogTotalExpLastQ <- log(CEsample$TotalExpLastQ)
+```
+
+
+Below is the sample R script to obtain the mean \texttt{mu\_n} and the standard deviation \texttt{sd\_n} for the posterior distribution for $\mu$. Note the prior choice $\pi(\mu) \sim \textrm{Normal}(5, 1)$. Also note the use of the known precision for \texttt{phi <- 1.25}.
+
+```{r, eval=FALSE}
+mu_0 <- 5
+sigma_0 <- 1
+phi_0 <- 1/sigma_0^2
+ybar <- mean(CEsample$LogTotalExpLastQ)
+phi <- 1.25
+n <- dim(CEsample)[1]
+
+mu_n <- (phi_0*mu_0+n*ybar*phi)/(phi_0+n*phi) 
+sd_n <- sqrt(1/(phi_0+n*phi))
+```
+
+## \textcolor{RoyalBlue}{Bayesian Inference for Unknown Mean $\mu$}
+
+
+#### \textcolor{RoyalBlue}{Exercise 1: } Assess the statement “the average log total expenditure of a CU is $9$ or more”. Report on the comparison of the exact solution and approximation by Monte Carlo simulation.
+
+Hint: For the exact solution, use the \texttt{pnorm()} function; for approximation by Monte Carlo simulation, use the \texttt{rnorm()} function.
+
+
+#### \textcolor{Bittersweet}{Grade for Exercise 1: /4} 
+#### \textcolor{Bittersweet}{Comments: }
+
+
+#### \textcolor{RoyalBlue}{Exercise 2: } Create a $95\%$ Bayesian credible interval for the parameter $\mu$. Report on the comparison of the exact solution and approximation by Monte Carlo simulation.
+
+Hint: For the exact solution, use the \texttt{qnorm()} function; for approximation by Monte Carlo simulation, use the \texttt{rnorm()} function.
+
+
+#### \textcolor{Bittersweet}{Grade for Exercise 2: /4} 
+#### \textcolor{Bittersweet}{Comments: }
+
+
+## \textcolor{RoyalBlue}{Bayesian prediction}
+
+One simulates a value from the predictive distribution in two steps: first, one simulates a value of the parameter $\mu$ from its posterior distribution, then use this simulated parameter draw to simulate a future observation $\tilde{Y}$ from the sampling distribution. In particular, the following algorithm can be used to simulate a single value from the posterior predictive distribution.
+
+1. Sample a value of $\mu$ from its posterior distribution
+\begin{eqnarray}
+\mu \sim \textrm{Normal}\left(\frac{\phi_0\mu_0 + n\phi\bar{y}}{\phi_0 + n\phi}, \sqrt{\frac{1}{\phi_0 + n\phi}}\right),
+\end{eqnarray}
+
+2. Sample a new observation $\tilde{Y}$ from the data model (i.e. a prediction)
+\begin{eqnarray}
+\tilde{Y} \sim \textrm{Normal}(\mu, \sigma).
+\end{eqnarray}
+
+#### \textcolor{RoyalBlue}{Exercise 3: } Simulate $S = 1000$ predicted values, and make a plot. 
+
+Hint: use the \texttt{rnorm()} function; use the known \texttt{phi <- 1.25} and/or \texttt{sigma <- 0.9}.
+
+
+```{r, eval=FALSE}
+# Here is some sample script to create the plot of the predicted log expenditure
+# Suppose y_pred is the vector storing the predicted values, and the column name is y
+
+ggplot(data = y_pred, aes(y_pred$y)) +
+geom_histogram(breaks = seq(0, 20, by=0.5), fill = blue) +
+xlab("y") + theme(text = element_text(size=10))
+```
+
+
+#### \textcolor{Bittersweet}{Grade for Exercise 3: /4} 
+#### \textcolor{Bittersweet}{Comments: }
+
+## \textcolor{RoyalBlue}{Posterior predictive checking} 
+  
+While Bayesian prediction is focused on simulating one $\tilde{Y}$ from one posterior draw of $\mu$, Bayesian posterior predictive checking is focused on simulating a set of $n$ $\tilde{Y}$'s from one posterior draw of $\mu$, and evaluate the model fitting. In the CE data example, $n = 6208$.
+
+1. Sample a value of $\mu$ from its posterior distribution
+\begin{eqnarray}
+\mu \sim \textrm{Normal}\left(\frac{\phi_0\mu_0 + n\phi\bar{y}}{\phi_0 + n\phi}, \sqrt{\frac{1}{\phi_0 + n\phi}}\right),
+\end{eqnarray}
+
+2. Sample a set of $n$ new observation $\tilde{Y}_1, \cdots, \tilde{Y}_n$ from the data model (i.e. $n$ predictions)
+\begin{eqnarray}
+\tilde{Y}_1, \cdots, \tilde{Y}_n \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+\end{eqnarray}
+
+3. To check model fitting, obtain the sample mean $\bar{y}_s$ from the $s$-th set of $\tilde{Y}_1, \cdots, \tilde{Y}_n$ and compare it against the observed sample mean $\bar{y}$ in the data sample.
+
+#### \textcolor{RoyalBlue}{Exercise 4: } Follow the 3 steps to perform posterior predictive checking.
+
+1. Step 1: Simulate $S = 1000$ sets of predicted values, each set contains $n = 6208$ predictions.
+
+2. Step 2: For each set, calculate the sample mean, $\bar{y}_s$.
+
+3. Step 3: Make a plot of $S = 1000$ predicted sample means $\{\bar{y}_s, s = 1, \cdots, S\}$, and compare the sample mean $\bar{y}$ in the CE data sample to the predicted $S = 1000$ sample means. Return $Prob(\bar{y} > \bar{y}_s \mid y)$ and $1 - Prob(\bar{y} > \bar{y}_s \mid y)$ and check the model fitting. Note that if either probability is small, it suggests the model does not describe the data well.
+
+
+Hint: use the \texttt{rnorm()} function; use the known \texttt{phi <- 1.25} and/or \texttt{sigma <- 0.9}.
+
+```{r, eval=FALSE}
+# Here is some sample script to create the plot of the predicted sample mean of log expenditure
+# Suppose mean_ppc is the vector storing the predicted sample mean values, 
+# and the column name is mean 
+# Further suppose the actual sample mean stored as sample_mean
+
+ggplot(data = mean_ppc, aes(mean_ppc$mean)) +
+geom_histogram(breaks = seq(0, 20, by=0.5), fill = blue) +
+annotate("point", x = sample_mean, y = 0, colour = "red", size = 5) + 
+xlab("y") + theme(text = element_text(size=10))
+```
+
+
+
+#### \textcolor{Bittersweet}{Grade for Exercise 4: /8} 
+#### \textcolor{Bittersweet}{Comments: }
+
