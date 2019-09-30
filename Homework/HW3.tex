@@ -1,0 +1,165 @@
+\documentclass[11pt]{article}
+\usepackage[top=2.1cm,bottom=2cm,left=2cm,right= 2cm]{geometry}
+%\geometry{landscape}                % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{changepage}
+\usepackage{lscape}
+\usepackage{ulem}
+\usepackage{multicol}
+\usepackage{dashrule}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{enumerate}
+\newcommand{\urlwofont}[1]{\urlstyle{same}\url{#1}}
+\newcommand{\degree}{\ensuremath{^\circ}}
+\newcommand{\hl}[1]{\textbf{\underline{#1}}}
+
+
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\newenvironment{choices}{
+\begin{enumerate}[(a)]
+}{\end{enumerate}}
+
+%\newcommand{\soln}[1]{\textcolor{MidnightBlue}{\textit{#1}}}	% delete #1 to get rid of solutions for handouts
+\newcommand{\soln}[1]{ \vspace{1.35cm} }
+
+%\newcommand{\solnMult}[1]{\textbf{\textcolor{MidnightBlue}{\textit{#1}}}}	% uncomment for solutions
+\newcommand{\solnMult}[1]{ #1 }	% uncomment for handouts
+
+%\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{black}{(#1)}}} }	% uncomment for handouts
+\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{blue}{(#1)}}} }	% uncomment for handouts
+
+\newcommand{\note}[1]{ \textbf{\textcolor{red}{[#1]}} }	% uncomment for handouts
+
+\begin{document}
+
+
+\enlargethispage{\baselineskip}
+
+Fall 2019 \hfill Jingchen (Monika) Hu\\
+
+\begin{center}
+{\huge MATH 347 Homework 3 (Total 40 points)}	\\
+Due: Thursday 10/3, at the beginning of the class
+\end{center}
+\vspace{0.5cm}
+
+\textbf{Name:} \rule{6cm}{0.5pt}\\
+%\textbf{List the questions you hope be to explained in class (no more than three)} \rule{3cm}{0.5pt}	 \\
+
+
+{\bf
+\begin{itemize}
+\item Print out this cover page and staple with your homework.
+\item Show all work. Incomplete solutions will be given no credit.
+\item You may prepare either hand-written or typed solutions,
+but make sure that they are legible.
+Answers that cannot be read will be given no credit.
+\item R graphical outputs must be printed instead of hand-drawn.
+
+\end{itemize}
+}
+
+%\underline{Textbook  Chapter 1   }
+
+\begin{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    \item
+    ({\it{12 points; 3 points each part}}) \\
+    In 1998, the New York Times and CBS News polled $1048$ randomly selected $13 - 17$ year olds to ask them if they had a television in their room. Among this group of teenagers, $692$ of them said they had a television in their room. Alex and Benedict both want to use the binomial model for this dataset, but they have different prior believes about $p$, the proportion of teenagers having a television in their room
+
+\begin{enumerate}
+\item Alex asks $10$ friends the same question, and $8$ of them have a television in their room. Alex decides to use this information  to construct his prior. Design a continuous beta prior reflecting Alex's belief.
+
+\item Benedict thinks the $0.2$ quantile is $0.3$ and the $0.9$ quantile is $0.4$. Design a continuous beta prior reflecting Benedict's belief.
+
+\item Calculate Alex's posterior and Benedict's posterior distributions. Plot the two priors on one graph, and plot the corresponding posteriors on another graph.  In addition, obtain  $95\%$ credible intervals for Alex and Benedict. 
+
+\item Conduct prior predictive checks for Alex and Benedict. Which prior do you think is more appropriate for this teenagers and television data.  Explain.
+\end{enumerate}
+
+    \item
+    ({\it{9 points; 3 points each part}}) \\
+Continuing from Question 1. Consider the odds of having a television in the room. Recall that if $p$ is the probability of having a television in room, then the odds is $\frac{p}{1-p}$.
+
+\begin{enumerate}
+\item Find the mean, median and 95\% posterior interval of Alex's analysis of the odds of teenagers having a television in their room.
+
+\item Find the mean, median and 95\% posterior interval of Benedict's analysis of the odds of teenagers having a television in their room.
+
+\item Compare the two posterior summaries from parts (a) and (b).
+\end{enumerate}
+
+
+	\item
+	({\it{5 points}}) \\
+	Write your own R code to simulate $S = \{10, 100, 500, 1000, 5000\}$ random samples of $p$ from the $\textrm{Beta}(15.06, 10.56)$ distribution. Use the \texttt{quantile} function to find the approximated middle 90\% credible interval of $p$ for each value of $S$. Describe your findings and comment on the effect of simulation size $S$ on the accuracy of the simulation results. Recall that the exact middle 90\% posterior interval estimate is [0.427, 0.741].
+
+
+	\item
+	({\it{6 points; 3 points each part}}) \\
+Do teachers' expectations impact academic development of children? To find out, researchers gave an IQ test to a group of 12 elementary school children. They randomly picked six children and told teachers that the test predicts them to have high potential for accelerated growth (accelerated group); for the other six students in the group, the researchers told teachers that the test predicts them to have no potential for growth (no growth group). At the end of school year, they gave IQ tests again to all 12 students, and the change in IQ scores of each student is recorded. Table \ref{table:IQtest} shows the IQ score change of students in the accelerated group and the no growth group.
+
+\begin{table}[htb]
+\caption{\label{table:IQtest} Data from IQ score change of 12 students; 6 are in the accelerated group, and 6 are in the no growth group.}
+\begin{center}
+\begin{tabular}{|c|c|} \hline
+Group & IQ score change \\ \hline
+Accelerated & 20, 10, 19, 15, 9, 18 \\
+No growth &  3, 2, 6, 10, 11, 5\\ \hline
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}%
+
+The sample means of the accelerated group and the no growth group are respectively $\bar{y}_A = 15.2$ and $\bar{y}_N = 6.2$.  Consider independent  sampling models, where the IQ scores for the accelerated group (no growth group) are assumed normal with mean $\mu_A$ ($\mu_N$) with known standard deviation $\sigma = 4$.
+
+\begin{eqnarray}
+Y_{A, i} &\overset{i.i.d.}{\sim}& \textrm{Normal}(\mu_A, 4), \,\,\, \text{for}\,\, i = 1, \cdots n_A, \\
+Y_{N, j} &\overset{i.i.d.}{\sim}& \textrm{Normal}(\mu_N, 4), \,\,\, \text{for}\,\, i = 1, \cdots n_N, 
+\end{eqnarray}
+where $n_A = n_N = 6$. 
+
+\begin{enumerate}
+\item Assuming independent sampling, write down the likelihood function of the means $(\mu_A, \mu_B)$.
+\item Assume that one's prior beliefs about $\mu_A$ and $\mu_N$ are independent, where $\mu_A \sim N(\gamma_A, \sigma_A)$ and $\mu_N \sim N(\gamma_N, \sigma_N)$.  Show that the posterior distributions for $\mu_A$ and $\mu_N$ are independent normal and find the mean and standard deviation parameters for each distribution.
+
+\end{enumerate}
+
+
+	\item
+	({\it{8 points; 4 points each part}}) \\
+Continuing from Question 4. Assume that one has vague prior beliefs and $\mu_A \sim N(0, 20)$ and $\mu_N \sim N(0, 20)$.
+
+\begin{enumerate}
+
+\item Is the average improvement for the accelerated group larger than that for the no growth group? Consider the parameter $\delta = \mu_A - \mu_N$ to measure the difference in means. The question now becomes finding the posterior probability of $\delta > 0$, i.e. $p(\mu_A - \mu_N > 0 \mid {\bf y}_A, {\bf y}_N)$, where ${\bf y}_A$ and ${\bf y}_N$ are the vectors of recorded IQ score change. (Hint: simulate a vector $s_A$ of posterior samples of $\mu_A$ and another vector $s_N$ of posterior samples of $\mu_N$ (make sure to use the same number of samples) and subtract $s_N$ from $s_A$, which gives us a vector of posterior differences between $s_N$ and $s_A$. This vector of posterior differences serves as an approximation to the posterior distribution of $\delta$.)
+
+\item What is the probability that a randomly selected child assigned to the accelerated group will have larger improvement than a randomly selected child assigned to the no growth group? Consider $\tilde{Y}_A$ and $\tilde{Y}_N$ to be random variables for predicted IQ score change for the accelerated group and the no growth group, respectively. The question now becomes finding the posterior predictive probability of $\tilde{Y}_A > \tilde{Y}_N$, i.e. $p(\tilde{Y}_A > \tilde{Y}_N \mid {\bf y}_A, {\bf y}_N)$, where ${\bf y}_A$ and ${\bf y}_N$ are the vectors of recorded IQ score change, each of length 6. (Hint: Show that the posterior predictive distributions of $\tilde{Y}_A$ and $\tilde{Y}_N$ are independent.  Simulate predicted IQ score changes from the posterior predictive distributions for the two.)
+
+
+\end{enumerate}
+
+
+
+
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+\end{document} 
