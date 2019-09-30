@@ -1,0 +1,113 @@
+\documentclass[11pt]{article}
+\usepackage[top=2.1cm,bottom=2cm,left=2cm,right= 2cm]{geometry}
+%\geometry{landscape}                % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{changepage}
+\usepackage{lscape}
+\usepackage{ulem}
+\usepackage{multicol}
+\usepackage{dashrule}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\newenvironment{rcases}
+  {\left.\begin{aligned}}
+  {\end{aligned}\right\rbrace}
+
+\newcommand{\urlwofont}[1]{\urlstyle{same}\url{#1}}
+\newcommand{\degree}{\ensuremath{^\circ}}
+\newcommand{\hl}[1]{\textbf{\underline{#1}}}
+
+
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\newenvironment{choices}{
+\begin{enumerate}[(a)]
+}{\end{enumerate}}
+
+%\newcommand{\soln}[1]{\textcolor{MidnightBlue}{\textit{#1}}}	% delete #1 to get rid of solutions for handouts
+\newcommand{\soln}[1]{ \vspace{1.35cm} }
+
+%\newcommand{\solnMult}[1]{\textbf{\textcolor{MidnightBlue}{\textit{#1}}}}	% uncomment for solutions
+\newcommand{\solnMult}[1]{ #1 }	% uncomment for handouts
+
+%\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{black}{(#1)}}} }	% uncomment for handouts
+\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{blue}{(#1)}}} }	% uncomment for handouts
+
+\newcommand{\note}[1]{ \textbf{\textcolor{red}{[#1]}} }	% uncomment for handouts
+
+\begin{document}
+
+
+\enlargethispage{\baselineskip}
+
+Fall 2019 \hfill Jingchen (Monika) Hu\\
+
+\begin{center}
+{\huge MATH 347 The Poisson model (one-parameter)}\\
+(Based on Hoff Section 3.2)	
+\end{center}
+\vspace{0.5cm}
+
+
+\begin{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\item[1.] Poisson distribution
+$$Pr(Y = y | \theta) = \textrm{dpois}(y, \theta) = \theta^y \exp(-\theta)/y!,\:\:\: \text{for $y\in\{0, 1, 2, \cdots\}$}$$
+\begin{itemize}
+\item[-] $E(Y|\theta) = \theta$, $Var(Y|\theta) = \theta$
+\end{itemize}
+\vspace{3mm}
+\item[2.] Gamma distribution
+$$p(\theta) = \textrm{dgamma}(\theta, a, b) = \frac{b^a}{\Gamma(a)}\theta^{a-1}\exp(-b\theta),\:\:\: \text{for $\theta, a, b > 0$}$$
+\begin{itemize}
+\item[-] $E(\theta) = a/b$, $Var(\theta) = a/b^2$
+\item[-] $\textrm{mode}(\theta) = (a-b)/b$, if $a>1$; 0, if $a<=1$
+\end{itemize}
+\vspace{3mm}
+\item[3.] Now if we have a Poisson data model and a Gamma prior
+\begin{itemize}
+\item[-] Prior $\textrm{Gamma}(a, b)$: complete the prior density\\
+$\pi(\theta) = $
+\vspace{10mm}
+\item[-] Likelihood: complete the joint pdf\\
+$Pr(Y_1=y_1, \cdots, Y_n=y_n|\theta) = \prod_{i=1}^{n}p(y_i|\theta) = $
+\vspace{10mm}
+\item[-] Posterior $\textrm{Gamma}(a+\sum_{i=1}^{n}y_i, b+n)$: derive and recognize the hyper-parameters\\
+$\pi(\theta|y_1, \cdots, y_n) = $
+\vspace{30mm}
+\end{itemize}
+
+\item[4.] Results: the gamma distribution is conjugate prior for Poisson sampling model (i.e. data model)\\
+\begin{equation*}
+\begin{rcases}
+  \theta \sim \textrm{Gamma}(a, b) \\
+  Y_1, \cdots, Y_n|\theta \sim \textrm{Poisson}(\theta)
+\end{rcases}
+\rightarrow \{\theta|Y_1, \cdots, Y_n\} \sim \textrm{Gamma}(a+\sum_{i=1}^{n}y_i, b+n)
+\end{equation*}
+\begin{itemize}
+\item[-] $E(\theta|y_1, \cdots, y_n) = \frac{a+\sum_{i=1}^{n}y_i}{b+n} = \frac{b}{b+n}\frac{a}{b} + \frac{n}{b+n}\frac{\sum y_i}{n}$,\\ weighted average of the prior mean and sample mean
+\end{itemize}
+\vspace{3mm}
+\item[5.] Prediction (Hoff page 47)
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+\end{document} 

@@ -1,0 +1,149 @@
+\documentclass[11pt]{article}
+\usepackage[top=2.1cm,bottom=2cm,left=2cm,right= 2cm]{geometry}
+%\geometry{landscape}                % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{changepage}
+\usepackage{lscape}
+\usepackage{ulem}
+\usepackage{multicol}
+\usepackage{dashrule}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\newenvironment{rcases}
+  {\left.\begin{aligned}}
+  {\end{aligned}\right\rbrace}
+
+\newcommand{\urlwofont}[1]{\urlstyle{same}\url{#1}}
+\newcommand{\degree}{\ensuremath{^\circ}}
+\newcommand{\hl}[1]{\textbf{\underline{#1}}}
+
+
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\newenvironment{choices}{
+\begin{enumerate}[(a)]
+}{\end{enumerate}}
+
+%\newcommand{\soln}[1]{\textcolor{MidnightBlue}{\textit{#1}}}	% delete #1 to get rid of solutions for handouts
+\newcommand{\soln}[1]{ \vspace{1.35cm} }
+
+%\newcommand{\solnMult}[1]{\textbf{\textcolor{MidnightBlue}{\textit{#1}}}}	% uncomment for solutions
+\newcommand{\solnMult}[1]{ #1 }	% uncomment for handouts
+
+%\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{black}{(#1)}}} }	% uncomment for handouts
+\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{blue}{(#1)}}} }	% uncomment for handouts
+
+\newcommand{\note}[1]{ \textbf{\textcolor{red}{[#1]}} }	% uncomment for handouts
+
+\begin{document}
+
+
+\enlargethispage{\baselineskip}
+
+Fall 2019 MATH 347 \hfill Jingchen (Monika) Hu\\
+
+\begin{center}
+{\huge Bayesian inference for a mean - derivation notes}	\\
+\end{center}
+\vspace{0.5cm}
+
+
+\section{Only the mean $\mu$ is unknown: Normal conjugate prior}
+
+
+
+\begin{itemize}
+\item The likelihood:
+\begin{eqnarray}
+y_1, \cdots, y_n \mid \mu, \sigma &\overset{i.i.d.}{\sim}& {\rm{Normal}}(\mu, \sigma)\\% \equiv {\rm{Normal}}(\mu, \frac{1}{\phi}) \\
+L(\mu) = p(y_1, \cdots, y_n \mid \mu, \sigma) &=& \prod_{i=1}^{n} \frac{1}{\sqrt{2\pi}\sigma}\exp\left(-\frac{1}{2\sigma^2}(y_i-\mu)^2\right) \nonumber \\
+&=& \prod_{i=1}^{n} \frac{1}{\sqrt{2\pi}}\phi^{\frac{1}{2}} \exp\left(-\frac{\phi}{2}(y_i - \mu)^2\right) \nonumber \\
+&=& \left(\frac{1}{\sqrt{2\pi}}\right)^n \phi^{\frac{n}{2}} \exp\left(-\frac{\phi}{2}\sum_{i=1}^{n}(y_i - \mu)^2\right) \nonumber \\
+\end{eqnarray}
+
+
+Note that $\sigma$ is assumed known, therefore the likelihood function is only in terms of $\mu$, i.e. $L(\mu)$.
+
+\item The prior distribution:
+\begin{eqnarray}
+\mu \mid \sigma &\sim& {\rm{Normal}}(\mu_0, \sigma_0) \\%\equiv {\rm{Normal}}(\mu_0, \frac{1}{\phi_0}) \\
+\pi(\mu) &=& \frac{1}{\sqrt{2\pi}\sigma_0} \exp\left(-\frac{1}{2\sigma_0^2}(\mu - \mu_0)^2\right) \nonumber \\
+&=& \frac{1}{\sqrt{2\pi}}\phi_0^{\frac{1}{2}} \exp\left(-\frac{\phi_0}{2}(\mu - \mu_0)^2\right) 
+\end{eqnarray}
+
+
+Similarly the prior is expressed as $\mu \mid \sigma$ to represent that $\sigma$ is known. When Bayes' rule is applied to derive the posterior of $\mu$, these manipulations require careful consideration regarding what is known.   Therefore any ``constants" or known quantities can be dropped/added with the proportionality sign ``$\propto$". 
+
+\item The posterior:
+
+\begin{eqnarray}
+\pi(\mu \mid y_1, \cdots, y_n, \sigma) &\propto&  \pi(\mu) L(\mu) \nonumber \\
+&\propto& \exp\left(-\frac{\phi_0}{2}(\mu - \mu_0)^2\right) \times \exp\left(-\frac{\phi}{2}\sum_{i=1}^{n}(y_i - \mu)^2\right) \nonumber \\
+&\propto& \exp\left(-\frac{1}{2}(\phi_0 +n\phi)\mu^2 + \frac{1}{2}(2\phi_0\mu_0 + 2n\phi\bar{y})\mu\right) \nonumber \\
+\texttt{[complete the square]} &\propto& \exp\left(-\frac{1}{2}(\phi_0 + n\phi)\left(\mu - \frac{\phi_0 \mu_0 + n\phi\bar{y} }{\phi_0 + n \phi}\right)^2\right) \nonumber \\
+\end{eqnarray}
+
+
+Looking at the final expression closely, one recognizes this as a Normal density with a precision instead of variance parameter.
+Specifically we recognize $(\phi_0 + n \phi)$ as the normal precision  and $(\frac{\phi_0 \mu_0 + n\bar{y} \phi}{\phi_0 + n \phi})$ as the normal mean, and we see the posterior distribution of $\mu$,
+
+\begin{eqnarray}
+\mu \mid y_1, \cdots, y_n, \sigma \sim {\rm{Normal}}\left(\frac{\phi_0 \mu_0 + n\phi\bar{y} }{\phi_0 + n \phi}, \sqrt{\frac{1}{\phi_0 + n \phi}}\right).
+\end{eqnarray}
+\end{itemize}
+
+
+
+\section{Only the standard deviation $\sigma$ is unknown: Gamma conjugate prior}
+
+
+\begin{itemize}
+\item The likelihood:
+\begin{eqnarray}
+y_1, \cdots, y_n \mid \mu, \sigma &\overset{i.i.d.}{\sim}& {\rm{Normal}}(\mu, \sigma)\\% \equiv {\rm{Normal}}(\mu, \frac{1}{\phi}) \\
+L(1/\sigma^2) = p(y_1, \cdots, y_n \mid \mu, \sigma) &=& \prod_{i=1}^{n} \frac{1}{\sqrt{2\pi}\sigma}\exp\left(-\frac{1}{2\sigma^2}(y_i-\mu)^2\right) \nonumber \\
+&=& \left(\frac{1}{\sqrt{2\pi}}\right)^n (1/\sigma^2)^{\frac{n}{2}} \exp\left(-\frac{(1/\sigma^2)}{2}\sum_{i=1}^{n}(y_i - \mu)^2\right) \nonumber \\
+\end{eqnarray}
+
+
+Note that $\mu$ is assumed known, therefore the likelihood function is only in terms of $1/\sigma^2$, i.e. $L(1/\sigma^2)$.
+
+
+\item The prior distribution:
+\begin{eqnarray}
+1/\sigma^2 \mid \mu &\sim& {\rm{Gamma}}(\alpha, \beta) \\%\equiv {\rm{Normal}}(\mu_0, \frac{1}{\phi_0}) \\
+\pi(1/\sigma^2) &=& \frac{\beta^{\alpha}}{\Gamma(\alpha)}(1/\sigma^2)^{\alpha-1}\exp(-\beta (1/\sigma^2))
+\end{eqnarray}
+
+
+Similarly the prior is expressed as $1/\sigma^2 \mid \mu$ to represent that $\mu$ is known. When Bayes' rule is applied to derive the posterior of $1/\sigma^2$, these manipulations require careful consideration regarding what is known.   Therefore any ``constants" or known quantities can be dropped/added with the proportionality sign ``$\propto$". 
+
+
+
+\item The posterior:
+
+\begin{eqnarray}
+\pi(1/\sigma^2 \mid y_1, \cdots, y_n, \mu) &\propto&  \pi(1/\sigma^2) L(1/\sigma^2) \nonumber \\
+&\propto& (1/\sigma^2)^{\alpha-1}\exp(-\beta(1/\sigma^2)) (1/\sigma^2)^{\frac{n}{2}}\exp\left(-\frac{1}{2}\sum_{i=1}^{n}(y_i-\mu)^2(1/\sigma^2)\right) \nonumber \\
+\texttt{[combine the powers]} &=& (1/\sigma^2)^{\alpha + \frac{n}{2} - 1} \exp\left(-\left(\beta+\frac{1}{2}\sum_{i=1}^{n}(y_i-\mu)^2\right)(1/\sigma^2)\right) \nonumber \\
+\end{eqnarray}
+
+
+Looking at the final expression closely, one recognizes this as a Gamma density:
+\begin{eqnarray}
+1/\sigma^2 \mid y_1, \cdots, y_n, \mu \sim {\rm{Gamma}}\left(\alpha + \frac{n}{2}, \beta + \frac{1}{2}\sum_{i=1}^{n}(y_i-\mu)^2\right).
+\end{eqnarray}
+
+
+
+\end{itemize}
+
+\end{document} 

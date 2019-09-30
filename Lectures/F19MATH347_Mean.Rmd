@@ -1,0 +1,415 @@
+---
+title: Bayesian Inference for a Mean
+author: Jingchen (Monika) Hu 
+institute: Vassar College
+date: MATH 347 Bayesian Statistics
+output:
+  beamer_presentation:
+    includes:
+      in_header: ../LectureStyle.tex
+slide_level: 2
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(gridExtra)
+require(ProbBayes)
+require(tidyverse)
+crcblue <- "#2905a1"
+knitr::opts_chunk$set(echo = TRUE)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+## Outline
+
+\tableofcontents[hideallsubsections]
+
+# Example: Expenditures in the Consumer Expenditure Surveys
+
+## The Consumer Expenditure Surveys Data (CE)
+- Conducted by the U.S. Census Bureau for the BLS.
+
+- Contains data on expenditures, income, and tax statistics about consumer units (CU) across the country.
+
+- Provides information on the buying habits of U.S. consumers.
+
+\pause
+
+- The CE program releases data in two ways:
+    - Tabular data (aggregated)
+    - Micro-level data: public-use microdata PUMD (CU-level)
+    
+\pause
+
+- We work with PUMD micro-level data, with the continuous variable \textcolor{VassarRed}{TOTEXPPQ}: CU total expenditures last quarter.
+
+- We work with Q1 2017 sample: $n = 6,208$.
+
+
+## The TOTEXPPQ variable
+
+```{r message = FALSE}
+CEsample <- read_csv("CEsample1.csv")
+
+summary(CEsample$TotalExpLastQ)
+sd(CEsample$TotalExpLastQ)
+```
+
+## The TOTEXPPQ variable cont'd
+
+```{r fig.height = 2.5, fig.width = 2.5, fig.align = "center", size = "footnotesize"}
+ggplot(data = CEsample, aes(TotalExpLastQ)) +
+  geom_density(color = crcblue, size = 1) + 
+  labs(title = "Total expenditure last Q") +
+  theme_grey(base_size = 8, base_family = "") 
+```
+
+## The TOTEXPPQ variable cont'd
+
+```{r fig.height = 2.5, fig.width = 2.5, fig.align = "center", size = "footnotesize", echo = FALSE}
+ggplot(data = CEsample, aes(TotalExpLastQ)) +
+  geom_density(color = crcblue, size = 1) + 
+  labs(title = "Total expenditure last Q") +
+  theme_grey(base_size = 8, base_family = "") 
+```
+
+- Very skewed to the right.
+
+- Take log and transform it to the log scale.
+
+
+## Log transformation of the TOTEXPPQ variable
+
+```{r fig.height = 2.2, fig.width = 2.2, fig.align = "center", size = "footnotesize"}
+CEsample$LogTotalExpLastQ <- log(CEsample$TotalExpLastQ)
+ggplot(data = CEsample, aes(LogTotalExpLastQ)) +
+  geom_density(color = crcblue, size = 1) + 
+  labs(title = "Total expenditure last Q (log)") +
+  theme_grey(base_size = 8, base_family = "") 
+```
+
+
+## The Normal distribution
+
+- The Normal distribution is a symmetric, bell-shaped distribution.
+
+- It has two parameters: mean $\mu$ and standard deviation $\sigma$.
+
+\pause
+
+- The probability density function (pdf) of $\textrm{Normal}(\mu, \sigma)$ is:
+$$
+f(y) = \frac{1}{\sqrt{2 \pi} \sigma} \exp\left(\frac{-(y - \mu)^2}{2 \sigma^2}\right), -\infty < y < \infty.
+$$
+
+## The Normal distribution cont'd
+
+```{r fig.height = 3, fig.width = 5, fig.align = "center", size = "footnotesize", echo = FALSE}
+ggplot(data = data.frame(y = c(-5, 5)), aes(y)) + 
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 0.5), aes(color = "Normal(0, 0.5)")) +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1), aes(color = "Normal(0, 1)")) + 
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 2), aes(color = "Normal(0, 2)")) +
+  stat_function(fun = dnorm, args = list(mean = -2, sd = 0.5), aes(color = "Normal(-2, 0.5)")) +
+  ylab("f(y)")
+```
+
+
+## $i.i.d.$ Normals
+
+- Suppose there are a sequence of $n$ responses: $Y_1, Y_2, \cdots, Y_n$.
+
+- Further suppose each response \textcolor{VassarRed}{independently and identically} follows a Normal distribution:
+
+$$
+Y_i \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+$$
+
+
+-  Then the joint probability density function (joint pdf) of $y_1, \cdots, y_n$ is:
+
+\begin{equation}
+f(y_1, \cdots, y_n) = \prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi} \sigma} \exp\left(\frac{-(y_i - \mu)^2}{2 \sigma^2}\right), -\infty < y_i < \infty.
+\end{equation}
+
+
+# Prior and posterior distributions for mean and standard deviation
+
+## Recap from proportion lecture
+
+- Bayesian inference procedure:
+    - Step 1: express an opinion about the location of the proportion $p$ before sampling (prior).
+    - Step 2: take the sample and record the observed proportion (data/likelihood).
+    - Step 3: use Bayes' rule to sharpen and update the previous opinion about $p$ given the information from the sample (posterior).
+    
+\pause
+
+- For Binomial data/likelihood, the Beta distributions are conjugate priors.
+    - The prior distribution: $p \sim \textrm{Beta}(a, b)$
+    - The sampling density: $Y \sim \textrm{Binomial}(n, p)$
+    - The posterior distribution: $p \mid Y = y \sim \textrm{Beta}(a + y, b + n - y)$
+    
+\pause
+
+- What to do for a Normal model $Y_i \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma)$?
+    - Data model/sampling density is chosen: Normal.
+    - What to do with two parameters $\mu$ and $\sigma$?
+    - How to specify priors? Conjugate priors exist?
+
+
+## Step 1: Prior distributions
+
+- The data model/sampling density for $n$ observations:
+$$
+Y_i \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+$$
+
+- There are two parameters $\mu$ and $\sigma$ in the Normal model.
+
+- Therefore, the likelihood is in terms of both unknown parameters:
+\begin{equation}
+f(y_1, \cdots, y_n) = L(\mu, \sigma).
+\end{equation}
+
+\pause
+
+- Need a joint prior distribution:
+\begin{equation}
+\pi(\mu, \sigma).
+\end{equation}
+
+- Bayes' rule will help us derive a joint posterior:
+\begin{equation}
+\pi(\mu, \sigma \mid y_1, \cdots, y_n).
+\end{equation}
+
+
+## If only mean $\mu$ is unknown
+
+- Special case: \textcolor{red}{$\mu$ is unknown, $\sigma$ is known}.
+
+- There is only one parameter $\mu$ in $Y_i \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma)$.
+
+- The Bayesian inference procedure simplifies to:
+    - The data model for $n$ observations with \textcolor{red}{$\sigma$ known}:
+    $$
+    Y_i \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+    $$
+    
+    - The likelihood is in terms of unknown parameter $\mu$:
+    \begin{equation}
+    f(y_1, \cdots, y_n) = L(\mu).
+    \end{equation}
+    
+    - Need a prior distribution for $\mu$:
+    \begin{equation}
+    \pi(\mu \mid \textcolor{red}{\sigma}).
+    \end{equation}
+    
+    - Bayes' rule will help us derive a posterior for $\mu$:
+    \begin{equation}
+    \pi(\mu \mid y_1, \cdots, y_n, \textcolor{red}{\sigma}).
+    \end{equation}
+
+
+## If only mean $\mu$ is unknown: Normal conjugate prior
+
+- For this special case, Normal prior for $\mu$ is a conjugate prior:
+    - The prior distribution:
+    \begin{equation}
+    \mu \mid \textcolor{red}{\sigma} \sim \textrm{Normal}(\mu_0, \sigma_0).
+    \end{equation}
+    
+    - The sampling density: 
+    \begin{equation}
+    y_1, \cdots, y_n \mid \mu, \sigma \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+    \end{equation}
+    
+    \pause
+    
+    - The posterior distribution: 
+    \begin{equation}
+    \mu \mid y_1, \cdots, y_n,\textcolor{red}{\phi} \sim \textrm{Normal}\left(\frac{\phi_0 \mu_0 + n\phi\bar{y} }{\phi_0 + n\phi}, \sqrt{\frac{1}{\phi_0 + n \phi}}\right),
+    \label{eq:NormalConjugate}
+    \end{equation}
+    where $\phi = \frac{1}{\sigma^2}$ (and $\phi_0 = \frac{1}{\sigma_0^2}$), the precision. \textcolor{red}{Since $\sigma$ (and $\sigma_0$) is known, $\phi$ (and $\phi_0$) is known too.}
+
+\pause 
+
+- We can then use the \texttt{rnorm()} R function to sample posterior draws of $\mu$ from Equation (\ref{eq:NormalConjugate}). \textcolor{red}{Known quantities: $\phi_0, \mu_0, n, \bar{y}, \phi$}
+
+
+
+## Simulate posterior draws of $\mu$
+
+```{r size = "footnotesize"}
+mu_0 <- 5
+sigma_0 <- 1
+phi_0 <- 1/sigma_0^2
+ybar <- mean(CEsample$LogTotalExpLastQ)
+phi <- 1.25
+n <- dim(CEsample)[1]
+mu_n <- (phi_0*mu_0+n*ybar*phi)/(phi_0+n*phi)
+sd_n <- sqrt(1/(phi_0+n*phi))
+
+set.seed(123)
+S <- 1000
+mu_post <- rnorm(S, mean = mu_n, sd = sd_n)
+df <- as.data.frame(mu_post)
+```
+
+## Simulate posterior draws of $\mu$ cont'd
+
+```{r fig.height = 2, fig.width = 3.5, fig.align = "center", size = "footnotesize"}
+ggplot(data = df, aes(mu_post)) + 
+  geom_density(color = crcblue, size = 1) + 
+  labs(title = "Posterior density") +
+  xlab(expression(mu)) +
+  theme_grey(base_size = 8, base_family = "") 
+```
+
+
+## If only standard deviation $\sigma$ is unknown
+
+- Special case: \textcolor{red}{$\mu$ is known, $\sigma$ is unknown}.
+
+- There is only one parameter $\mu$ in $Y_i \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma)$.
+
+- The Bayesian inference procedure simplifies to:
+    - The data model/sampling density for $n$ observations with \textcolor{red}{$\mu$ known}:
+    $$ 
+    Y_i \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+    $$
+    
+    - The likelihood is in terms of unknown parameter $\sigma$:
+    \begin{equation}
+    f(y_1, \cdots, y_n) = L(\sigma).
+    \end{equation}
+    
+    - Need a prior distribution for $\sigma$:
+    \begin{equation}
+    \pi(\sigma \mid \textcolor{red}{\mu}).
+    \end{equation}
+    
+    - Bayes' rule will help us derive a posterior for $\sigma$:
+    \begin{equation}
+    \pi(\sigma \mid y_1, \cdots, y_n, \textcolor{red}{\mu}).
+    \end{equation}
+
+
+## If only standard deviation $\sigma$ is unknown: Gamma conjugate prior for $1/\sigma^2$
+
+- For this special case, Gamma prior for $1/\sigma^2$ is a conjugate prior:
+    - The prior distribution:
+    \begin{equation}
+    1/\sigma^2 \mid \textcolor{red}{\mu} \sim \textrm{Gamma}(\alpha, \beta).
+    \end{equation}
+
+    - The sampling density: 
+    \begin{equation}
+    y_1, \cdots, y_n \mid \mu, \sigma \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+    \end{equation}
+    
+    \pause
+    
+    - The posterior distribution: 
+    \begin{equation}
+    1/\sigma^2 \mid y_1, \cdots, y_n,\textcolor{red}{\mu} \sim \textrm{Gamma} \left(\alpha + \frac{n}{2}, \beta +                \frac{1}{2}\sum_{i=1}^{n}(y_i - \mu)^2 \right)
+    \label{eq:GammaConjugate}
+    \end{equation}
+    
+\pause
+
+- We can then use \texttt{rgamma()} R function to sample posterior draws of $\sigma$ from Equation (\ref{eq:GammaConjugate}). \textcolor{red}{Known quantities: $\alpha, n, \beta, \{y_i\}, \mu$}
+
+
+## Simulate posterior draws of $\sigma$
+
+```{r size = "footnotesize"}
+alpha <- 1
+beta <- 1
+mu <- 8
+n <- dim(CEsample)[1]
+alpha_n <- alpha+n/2
+beta_n <- beta+1/2*sum((CEsample$LogTotalExpLastQ-mu)^2)
+
+set.seed(123)
+S <- 1000
+invsigma2_post <- rgamma(S, shape=alpha_n, rate=beta_n)
+df <- as.data.frame(invsigma2_post)
+```
+
+
+## Simulate posterior draws of $\sigma$ cont'd
+
+```{r fig.height = 2, fig.width = 3.5, fig.align = "center", size = "footnotesize"}
+ggplot(data = df, aes(invsigma2_post)) + 
+  geom_density(color = crcblue, size = 1) + 
+  labs(title = "Posterior density") +
+  xlab(expression(1/sigma^2)) + 
+  theme_grey(base_size = 8, base_family = "") 
+```
+
+
+# Bayesian inference for unknown mean $\mu$ (Lab 2)
+
+## Inference questions
+
+- Bayesian hypothesis testing
+    - exact solution: conjugacy
+        - \texttt{pbeta()} $\rightarrow$ \texttt{pnorm()} R functions
+    - approximation by Monte Carlo simulation 
+        - \texttt{rbeta()} $\rightarrow$ \texttt{rnorm()} R functions
+
+\pause
+
+- Bayesian credible interval
+    - exact solution: conjugacy
+        - \texttt{qbeta()} $\rightarrow$ \texttt{qnorm()} R functions
+    - approximation by Monte Carlo simulation
+        - \texttt{rbeta()} $\rightarrow$ \texttt{rnorm()} R functions
+    
+\pause
+
+- Bayesian prediction
+    - approximation by Monte Carlo simulation
+        - \texttt{rbeta()} $\rightarrow$ \texttt{rnorm()} R functions
+    
+\pause
+
+- Posterior predictive checking
+    - approximation by Monte Carlo simulation
+        - \texttt{rbeta()} $\rightarrow$ \texttt{rnorm()} R functions
+    
+    
+# Recap
+
+## Recap
+
+- Bayesian inference procedure:
+    - Step 1: express an opinion about the location of mean $\mu$ and standard deviation $\sigma$ (or precision $\phi$) before sampling (prior).
+    - Step 2: take the sample (data/likelihood).
+    - Step 3: use Bayes' rule to sharpen and update the previous opinion about $\mu$ and $\sigma$ (or precision $\phi$) given the information from the sample (posterior).
+    
+\pause
+
+- For Normal data/likelihood, Normal distributions are conjugate priors for $\mu$, and Gamma distributions are conjugate priors for $\phi$.
+
+\pause
+
+- Bayesian inference
+    - Bayesian hypothesis testing
+    - Bayesian credible interval
+    - Bayesian prediction
+    - Posterior predictive checking
+    
+\pause
+
+- What if we want to use a different prior for $\mu$? What if both $\mu$ and $\sigma$ are unknown?
+
