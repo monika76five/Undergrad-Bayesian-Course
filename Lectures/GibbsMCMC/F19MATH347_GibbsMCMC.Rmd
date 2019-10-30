@@ -1,0 +1,697 @@
+---
+title: Gibbs sampler and MCMC
+author: Jingchen (Monika) Hu 
+institute: Vassar College
+date: MATH 347 Bayesian Statistics
+output:
+  beamer_presentation:
+    includes:
+      in_header: ../LectureStyle.tex
+slide_level: 2
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(gridExtra)
+require(ProbBayes)
+require(tidyverse)
+crcblue <- "#2905a1"
+knitr::opts_chunk$set(echo = TRUE)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+## Outline
+
+\tableofcontents[hideallsubsections]
+
+# Example: Expenditures in the Consumer Expenditure Surveys
+
+## The TOTEXPPQ variable in the CE sample
+
+```{r message = FALSE, size = "footnotesize"}
+CEsample <- read_csv("CEsample1.csv")
+
+summary(CEsample$TotalExpLastQ)
+sd(CEsample$TotalExpLastQ)
+```
+
+## The TOTEXPPQ variable in the CE sample cont'd
+
+```{r fig.height = 2.5, fig.width = 2.5, fig.align = "center", size = "footnotesize", echo = FALSE}
+ggplot(data = CEsample, aes(TotalExpLastQ)) +
+  geom_density(color = crcblue, size = 1) + 
+  labs(title = "Total expenditure last Q") +
+  theme_grey(base_size = 8, base_family = "") 
+```
+
+## Log transformation of the TOTEXPPQ variable
+
+```{r fig.height = 2.2, fig.width = 2.2, fig.align = "center", size = "footnotesize"}
+CEsample$LogTotalExpLastQ <- log(CEsample$TotalExpLastQ)
+ggplot(data = CEsample, aes(LogTotalExpLastQ)) +
+  geom_density(color = crcblue, size = 1) + 
+  labs(title = "Total expenditure last Q (log)") +
+  theme_grey(base_size = 8, base_family = "") 
+```
+
+
+## The Normal distribution
+
+- The Normal distribution is a symmetric, bell-shaped distribution.
+
+- It has two parameters: mean $\mu$ and standard deviation $\sigma$.
+
+- The probability density function (pdf) of $\textrm{Normal}(\mu, \sigma)$ is:
+$$
+f(y) = \frac{1}{\sqrt{2 \pi} \sigma} \exp\left(\frac{-(y - \mu)^2}{2 \sigma^2}\right), -\infty < y < \infty.
+$$
+
+## The Normal distribution cont'd
+
+```{r fig.height = 3, fig.width = 5, fig.align = "center", size = "footnotesize", echo = FALSE}
+ggplot(data = data.frame(y = c(-5, 5)), aes(y)) + 
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 0.5), aes(color = "Normal(0, 0.5)")) +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1), aes(color = "Normal(0, 1)")) + 
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 2), aes(color = "Normal(0, 2)")) +
+  stat_function(fun = dnorm, args = list(mean = -2, sd = 0.5), aes(color = "Normal(-2, 0.5)")) +
+  ylab("f(y)")
+```
+
+
+## $i.i.d.$ Normals
+
+- Suppose there are a sequence of $n$ responses: $Y_1, Y_2, \cdots, Y_n$.
+
+- Further suppose each response \textcolor{VassarRed}{independently and identically} follows a Normal distribution:
+
+$$
+Y_i \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+$$
+
+
+-  Then the joint probability density function (joint pdf) of $y_1, \cdots, y_n$ is:
+
+\begin{equation}
+f(y_1, \cdots, y_n) = \prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi} \sigma} \exp\left(\frac{-(y_i - \mu)^2}{2 \sigma^2}\right), -\infty < y_i < \infty.
+\end{equation}
+
+
+# Prior and posterior distributions for mean AND standard deviation
+
+
+## Step 1: Prior distributions
+
+- The data model/sampling density for $n$ observations:
+$$
+Y_i \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+$$
+
+- There are two parameters $\mu$ and $\sigma$ in the Normal model.
+
+- Therefore, the likelihood is in terms of both unknown parameters:
+\begin{equation}
+f(y_1, \cdots, y_n) = L(\mu, \sigma).
+\end{equation}
+
+\pause
+
+- Need a joint prior distribution:
+\begin{equation}
+\pi(\mu, \sigma).
+\end{equation}
+
+- Bayes' rule will help us derive a joint posterior:
+\begin{equation}
+\pi(\mu, \sigma \mid y_1, \cdots, y_n).
+\end{equation}
+
+
+## If only mean $\mu$ is unknown: Normal conjugate prior
+
+- For this special case, Normal prior for $\mu$ is a conjugate prior:
+    - The prior distribution:
+    \begin{equation}
+    \mu \mid \textcolor{red}{\sigma} \sim \textrm{Normal}(\mu_0, \sigma_0).
+    \end{equation}
+    
+    - The sampling density: 
+    \begin{equation}
+    y_1, \cdots, y_n \mid \mu, \sigma \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+    \end{equation}
+    
+    \pause
+    
+    - The posterior distribution: 
+    \begin{equation}
+    \mu \mid y_1, \cdots, y_n,\textcolor{red}{\phi} \sim \textrm{Normal}\left(\frac{\phi_0 \mu_0 + n\phi\bar{y} }{\phi_0 + n\phi}, \sqrt{\frac{1}{\phi_0 + n \phi}}\right),
+    \label{eq:NormalConjugate}
+    \end{equation}
+    where $\phi = \frac{1}{\sigma^2}$ (and $\phi_0 = \frac{1}{\sigma_0^2}$), the precision. \textcolor{red}{Since $\sigma$ (and $\sigma_0$) is known, $\phi$ (and $\phi_0$) is known too.}
+
+
+- We can then use the \texttt{rnorm()} R function to sample posterior draws of $\mu$ from Equation (\ref{eq:NormalConjugate}). \textcolor{red}{Known quantities: $\phi_0, \mu_0, n, \bar{y}, \phi$}
+
+
+
+
+## If only standard deviation $\sigma$ is unknown: Gamma conjugate prior for $1/\sigma^2$
+
+- For this special case, Gamma prior for $1/\sigma^2$ is a conjugate prior:
+    - The prior distribution:
+    \begin{equation}
+    1/\sigma^2 \mid \textcolor{red}{\mu} \sim \textrm{Gamma}(\alpha, \beta).
+    \end{equation}
+
+    - The sampling density: 
+    \begin{equation}
+    y_1, \cdots, y_n \mid \mu, \sigma \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+    \end{equation}
+    
+    \pause
+    
+    - The posterior distribution: 
+    \begin{equation}
+    1/\sigma^2 \mid y_1, \cdots, y_n,\textcolor{red}{\mu} \sim \textrm{Gamma} \left(\alpha + \frac{n}{2}, \beta +                \frac{1}{2}\sum_{i=1}^{n}(y_i - \mu)^2 \right)
+    \label{eq:GammaConjugate}
+    \end{equation}
+
+- We can then use \texttt{rgamma()} R function to sample posterior draws of $\sigma$ from Equation (\ref{eq:GammaConjugate}). \textcolor{red}{Known quantities: $\alpha, n, \beta, \{y_i\}, \mu$}
+
+
+## Go back to: both $\mu$ and $\sigma$ are unknown
+
+- Given what we have seen, how about a joint prior distribution as:
+\begin{equation}
+\pi(\mu, \sigma) = \pi_1(\mu) \pi_2(\sigma),
+\end{equation}
+and let priors be 
+\begin{eqnarray}
+\mu &\sim \textrm{Normal}(\mu_0, \sigma_0),\\
+1/\sigma^2 &\sim \textrm{Gamma}(\alpha, \beta).
+\end{eqnarray}
+
+\pause
+
+Bayes' rule will produce two \textcolor{red}{full conditional posterior distributions}:
+\small{
+\begin{eqnarray}
+\mu \mid y_1, \cdots, y_n,{\color{red}\phi} &\sim& \textrm{Normal}\left(\frac{\phi_0 \mu_0 + n\phi\bar{y}}{\phi_0 + n \phi}, \sqrt{\frac{1}{\phi_0 + n \phi}}\right),  \\ \nonumber 
+1/\sigma^2 = \phi \mid y_1, \cdots, y_n,{\color{red}\mu} &\sim& \textrm{Gamma} \left(\alpha + \frac{n}{2}, \beta + \frac{1}{2}\sum_{i=1}^{n}(y_i - \mu)^2 \right). \nonumber \\
+\end{eqnarray}
+}
+
+\pause
+
+- Why and how to derive them? Key: independent priors.
+
+## Sampling scheme: A Gibbs sampler
+
+\begin{eqnarray}
+\mu \mid y_1, \cdots, y_n,{\color{red}\phi} &\sim& \textrm{Normal}\left(\frac{\phi_0 \mu_0 + n\phi\bar{y}}{\phi_0 + n \phi}, \sqrt{\frac{1}{\phi_0 + n \phi}}\right),  \nonumber \\
+1/\sigma^2 = \phi \mid y_1, \cdots, y_n,{\color{red}\mu} &\sim& \textrm{Gamma} \left(\alpha + \frac{n}{2}, \beta + \frac{1}{2}\sum_{i=1}^{n}(y_i - \mu)^2 \right). \nonumber 
+\end{eqnarray}
+
+\pause
+
+\small{
+Start with initial values for parameters, $(\mu^{(0)},  \phi^{(0)})$. For $s = 1, \ldots, S$, generate from the following sequence of \textcolor{red}{full conditional posterior distributions}:
+
+- $\mu^{(s)} \sim p(\mu \mid \phi^{(s-1)}, Y)$
+
+- $\phi^{(s)} \sim p(\phi \mid \mu^{(s)}, Y)$
+
+- Set $\theta^{(s)} = (\mu^{(s)}, \phi^{(s)})$
+
+The sequence  $\{\theta^{(s)}$: $s = 1, \ldots, S\}$ may be viewed
+(but is not necessarily...yet) as a dependent sample from the joint
+posterior distribution of $(\mu, \phi)$.
+}
+
+
+## Use R/RStudio to run a Gibbs sampler
+
+```{r message = FALSE, size = "footnotesize"}
+gibbs_normal <- function(input, S, seed){
+  set.seed(seed)
+  ybar <- mean(input$y)
+  n <- length(input$y)
+  para <- matrix(0, S, 2)
+  phi <- input$phi_init
+  for(s in 1:S){
+    mu1 <- (input$mu_0/input$sigma_0^2 + n*phi*ybar)/
+    (1/input$sigma_0^2 + n*phi)
+    sigma1 <- sqrt(1/(1/input$sigma_0^2 + n*phi))
+    mu <- rnorm(1, mean = mu1, sd = sigma1)
+    alpha1 <- input$alpha + n/2
+    beta1 <- input$beta + sum((input$y - mu)^2)/2 
+    phi <- rgamma(1, shape = alpha1, rate = beta1)
+    para[s, ] <- c(mu, phi)
+  }
+  para }
+```
+
+
+## Use R/RStudio to run a Gibbs sampler cont'd
+
+- Run the Gibbs sampler:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "footnotesize"}
+input <- list(y = CEsample$LogTotalExpLastQ, mu_0 = 5,sigma_0 = 1,
+alpha = 1, beta = 1,phi_init = 1)
+output <- gibbs_normal(input, S = 10000, seed = 123)
+```
+
+\pause 
+
+- Extract posterior draws of \texttt{mu} and \texttt{phi} from the Gibbs sampler output:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "footnotesize"}
+para_post <- as.data.frame(output)
+names(para_post) <- c("mu", "phi")
+```
+
+
+## Use R/RStudio to run a Gibbs sampler cont'd
+
+```{r fig.height = 1.5, fig.width = 2, fig.align = "center", size = "footnotesize"}
+ggplot(para_post, aes(mu)) + 
+  geom_density(size = 2, color = crcblue) + 
+  labs(title = "Posterior draws of mu") +
+  theme_grey(base_size = 8, 
+  base_family = "") 
+```
+
+```{r message = FALSE, size = "footnotesize"}
+quantile(para_post$mu, c(0.025,0.975))
+```
+
+
+
+## Use R/RStudio to run a Gibbs sampler cont'd
+
+```{r fig.height = 1.5, fig.width = 2, fig.align = "center", size = "footnotesize"}
+ggplot(para_post, aes(phi)) + 
+  geom_density(size = 2, color = crcblue) + 
+  labs(title = "Posterior draws of phi") +
+  theme_grey(base_size = 8, 
+  base_family = "") 
+```
+
+```{r message = FALSE, size = "footnotesize"}
+quantile(para_post$phi, c(0.025,0.975))
+```
+
+## Exercise: Gibbs sampler
+
+- Exercise 1: Update the following Gibbs sampler to initiate it with \texttt{mu\_init}. Compare your results to the existing results.
+
+- Exercise 2: Update the following Gibbs sampler to initiate it with \texttt{mu\_init} and \texttt{phi\_init}. Compare your results to the existing results.
+
+
+## Extends to more than 2 parameters
+
+Suppose the full conditional posterior distributions of $\boldsymbol\theta = (\theta_1, \theta_2, \ldots, \theta_m)$ are all tractable.
+
+- Start the Gibbs sampler at the initial value $(\theta_1^{(0)}, \theta_2^{(0)}, \ldots, \theta_m^{(0)})$, or a subset of them.
+
+- For the $(s+1)$-th iteration: generate from the following full conditionals sequentially:
+    - $\theta_1^{(s+1)} \sim p(\theta_1 \mid \theta_2^{(s)}, \theta_3^{(s)}, \theta_4^{(s)}, \ldots, \theta_m^{(s)}, Y)$
+    - $\theta_2^{(s+1)} \sim p(\theta_2 \mid \theta_1^{(s+1)}, \theta_3^{(s)}, \theta_4^{(s)}, \ldots, \theta_m^{(s)}, Y)$
+    - $\theta_3^{(s+1)} \sim p(\theta_3 \mid \theta_1^{(s+1)}, \theta_2^{(s+1)}, \theta_4^{(s)}, \ldots, \theta_m^{(s)}, Y)$
+    - $\vdots$
+    - $\theta_m^{(s+1)} \sim p(\theta_m \mid \theta_1^{(s+1)}, \theta_2^{(s + 1)}, \theta_3^{(s+1)}, \ldots, \theta_{m-1}^{(s+1)}, Y)$
+    
+
+# Use JAGS (Just Another Gibbs Sampler) and Bayesian inferences
+
+## JAGS for unknown mean and standard deviation case 
+
+- R package \texttt{runjags} to run Markov chain Monte Carlo simulations.
+
+- Descriptive of the sampling model and the prior.
+
+\pause
+
+- Installing JAGS software and \texttt{runjags} R package
+    - Download JAGS at [this link](https://sourceforge.net/projects/mcmc-jags/files/JAGS/4.x/)
+    - Install and load \texttt{runjags} R package
+    
+    \vspace{3mm}
+    
+```{r message = FALSE, size = "footnotesize", eval = FALSE}
+install.packages("runjags")
+```
+    
+```{r message = FALSE, size = "footnotesize"}
+library(runjags)
+```
+
+## JAGS for unknown mean and standard deviation case cont'd
+- Example: Normal model with unknown mean and standard deviation.
+    - The prior distributions:
+    \begin{eqnarray}
+    \mu &\sim& \textrm{Normal}(\mu_0, \sigma_0), \nonumber \\
+    1/\sigma^2 = \phi &\sim& \textrm{Gamma}(\alpha, \beta). \nonumber
+    \end{eqnarray}
+    - The sampling density: 
+    \begin{equation}
+    y_1, \cdots, y_n \mid \mu, \sigma \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).     \nonumber
+    \end{equation}
+    - Bayes' rule will produce two \textcolor{red}{full conditional posterior                   distributions}:
+    \begin{eqnarray}
+    \mu \mid y_1, \cdots, y_n,{\color{red}\phi} &\sim& \textrm{Normal}\left(\frac{\phi_0        \mu_0 + n\bar{y} \phi}{\phi_0 + n \phi}, \sqrt{\frac{1}{\phi_0 + n \phi}}\right),           \nonumber \\
+    1/\sigma^2 = \phi \mid y_1, \cdots, y_n,{\color{red}\mu} &\sim& \textrm{Gamma}              \left(\alpha + \frac{n}{2}, \beta + \frac{1}{2}\sum_{i=1}^{n}(y_i - \mu)^2 \right).         \nonumber \\ \nonumber
+    \end{eqnarray}
+
+
+## JAGS for unknown mean and standard deviation case cont'd
+
+- Only need to focus on the sampling density and the prior:
+    - The sampling density: 
+    \begin{equation}
+    y_1, \cdots, y_n \mid \mu, \sigma \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).      \nonumber
+    \end{equation}
+    
+    - The prior distributions:
+    \begin{eqnarray}
+    \mu &\sim& \textrm{Normal}(\mu_0, \sigma_0), \nonumber \\
+    1/\sigma^2 = \phi &\sim& \textrm{Gamma}(\alpha, \beta). \nonumber
+    \end{eqnarray}
+
+    
+```{r message = FALSE, size = "footnotesize"}
+modelString <- "
+model{
+for (i in 1:N) {
+y[i] ~ dnorm(mu, phi)
+}
+mu ~ dnorm(mu_0, phi_0)
+phi ~ dgamma(alpha, beta)
+}
+"
+```
+
+## JAGS for unknown mean and standard deviation case cont'd
+
+- Pass the data and hyperparameter values to JAGS:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "footnotesize", warning = FALSE, results = 'hide'}
+y <- CEsample$LogTotalExpLastQ
+N <- length(y)
+the_data <- list("y" = y, "N" = N, "mu_0" = 5, "phi_0" = 1/1^2, 
+"alpha" = 1,"beta" = 1)
+```
+
+\pause 
+
+- Run the JAGS code for this model:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "footnotesize", warning = FALSE, results = 'hide'}
+posterior <- run.jags(modelString,
+                  data = the_data,
+                  monitor = c("mu", "phi"),
+                  n.chains = 1,
+                  adapt = 1000,
+                  burnin = 2000,
+                  sample = 5000,
+                  thin = 1)
+```
+
+## JAGS for unknown mean and standard deviation case cont'd
+
+- Obtain posterior summaries of \texttt{mu} and \texttt{phi}:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+summary(posterior) 
+```
+
+# MCMC diagnostics
+
+## MCMC Convergence to posterior distribution
+
+Theory proves that if a Gibbs sampler iterates enough, the
+draws will be from the joint posterior distribution (called the \textcolor{red}{target} or
+\textcolor{red}{stationary} distribution). 
+
+\pause
+
+- Do initial values matter? Should they matter?
+
+- "Markov chain" indicate dependence of draws. How to create independent parameter draws?
+
+- How long do we need to run the MCMC to adequately explore the posterior distribution?
+
+- How can we tell if the chain is not converging?
+
+## Discard initial steps: burn-in
+
+- Do not want pre-convergence values to influence the summary of the posterior distribution (the draws of the parameters from the MCMC) too much.
+
+- Ideal is to throw away all draws before convergence to target distribution, and use only draws after convergence.
+
+- Hard to know exactly when convergence has happened. Thus, it is standard to throw out the first $p\%$ of draws (default is 50\%) as \textcolor{red}{burn-in} after you are satisfied that convergence has been achieved.
+
+- Inference done with remaining $(100 - p\%)$ of draws.
+
+
+## Discard initial steps: burn-in cont'd
+
+
+```{r message = FALSE, size = "footnotesize", eval = FALSE}
+posterior <- run.jags(modelString,
+                  data = the_data,
+                  monitor = c("mu", "phi"),
+                  n.chains = 1,
+                  adapt = 1000,
+                  burnin = 2000,
+                  sample = 5000,
+                  thin = 1)
+```
+
+## Trace plots to check MCMC mixing
+
+- Trace plots show the progress of the chain over time. The ideal trace plot has a lot of movement around the mode from iteration to iteration and not a lot of "stickiness."
+
+- Trace plots with a clear trend are evidence that MCMC sampler has not yet converged, and it needs to run longer (or there is an error in your code).
+
+- Trace plots with extreme stickiness suggest that the chain may not have explored the entire parameter space yet, and it needs to run longer.
+
+- Hard to tell convergence from trace plots alone, because you might be stuck in one region of the parameter space in all of the iterations.
+
+## Trace plots example
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior, vars = "mu")
+```
+
+## ACF plots and effective sample size to check correlation diagnostics
+
+- Independent (Monte Carlo) draws have zero autocorrelations. Dependent draws (MCMC) have non-zero, usually positive, autocorrelations.
+
+- Large autocorrelations indicate that chain is not mixing well, i.e., the chain possibly has not explored the full space of the posterior distribution (has not converged).
+
+- Large autocorrelations often arise in multi-parameter MCMC algorithms when the parameters are highly correlated.
+
+- This usually means you need to run the chains longer to feel comfortable about convergence.  It also implies a smaller effective sample size....
+
+- ACF plots (auto correlation function) \& effective sample size.
+
+## ACF plots example
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior, vars = "mu")
+```
+
+## Effective sample size example
+
+- The column of \texttt{SSeff}; recall \texttt{sample} is 5000.
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+summary(posterior) 
+```
+
+## Create independent samples: thin
+
+- Monte Carlo samples come from independent parameter draws, thus they move around the parameter space freely.
+
+- Markov chain properties could create dependence among adjacent parameter draws.
+
+- Use \textcolor{red}{thin} to save every $x$ draws.
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "footnotesize", eval = FALSE}
+posterior <- run.jags(modelString,
+                  data = the_data,
+                  monitor = c("mu", "phi"),
+                  n.chains = 1,
+                  adapt = 1000,
+                  burnin = 2000,
+                  sample = 5000,
+                  thin = 1)
+```
+
+## MCMC diagnostics for the CE example
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior, vars = "mu")
+```
+
+## MCMC diagnostics for the CE example cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior, vars = "phi")
+```
+
+## Gelman-Rubin diagnostics
+
+- Gelman and Rubin (1992) propose running $m > 1$ separate Markov chains each of length $S$. When convergence is reached, the draws from the chains are all from the target distribution. Hence, at convergence, the output from all chains is indistinguishable.
+
+- Diagnostic based on the contrapositive: if output from chains is not indistinguishable, convergence has not been reached.  Diagnostic applied to one variable at a time.
+
+- Use different starting values that are overdispersed (really spread out) relative to the posterior distribution. This helps ensure all the chains are not stuck in the
+same region.
+
+- Gelman-Rubin diagnostic based a comparison of within-chain and between-chain variances, which is similar to a classical analysis of variance.
+
+
+## Gelman-Rubin diagnostics example
+
+- Create intinial values of \texttt{mu} and \texttt{phi}:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE, results = 'hide'}
+inits1 <- dump.format(list(mu = 1, phi = 1, 
+			.RNG.name="base::Super-Duper", .RNG.seed = 1))
+inits2 <- dump.format(list(mu = 10, phi = 10,
+			.RNG.name="base::Wichmann-Hill", .RNG.seed = 2))
+```
+
+\pause 
+
+- Feed in \texttt{inits1} and \texttt{inits2}, and let \texttt{n.chains = 2}:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE, results = 'hide'}
+posterior_2chains <- run.jags(modelString,
+                      data = the_data,
+                      monitor = c("mu", "phi"),
+                      n.chains = 2,
+                      inits=c(inits1, inits2), 
+                      adapt = 1000,
+                      burnin = 2000,
+                      sample = 5000,
+                      thin = 1)
+```
+
+## Gelman-Rubin diagnostics example cont'd
+
+- Return \texttt{psrf} from the output, as Gelman-Rubin diagnostic results:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+posterior_2chains$psrf
+```
+
+## MCMC diagnostics for the CE example, 2 chains
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior_2chains, vars = "mu")
+```
+
+
+## Useful diagnostics/functions in coda package
+
+The \texttt{coda} R package provides many popular diagnostics for assessing convergence of MCMC output from self-coded Gibbs sampler.
+
+- Trace plots: \texttt{traceplot()}
+
+- Autocorrelation: \texttt{autocorr.plot()}
+
+- Effective Sample Size: \texttt{effectiveSize()}
+
+- Gelman-Rubin: \texttt{gelman.diag()}
+
+
+## Useful diagnostics/functions in coda package
+
+- One needs to convert parameter draws into an MCMC object. For example:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", eval = FALSE}
+install.packages("coda")
+```
+
+```{r message = FALSE, size = "scriptsize", eval = FALSE}
+library(coda)
+out <- gibbs_normal(input, S = 10000, seed = 123)
+para_post = as.data.frame(out)
+names(para_post) = c("mu", "phi")
+```
+
+\pause
+
+- Then one can perform MCMC diagnostics. For example: 
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", eval = FALSE}
+mu.mcmc = as.mcmc(para_post$mu)
+```
+
+```{r message = FALSE, size = "scriptsize", eval = FALSE}
+traceplot(mu.mcmc)
+autocorr.plot(mu.mcmc)
+effectiveSize(mu.mcmc)
+gelman.diag(mu.mcmc)
+```
+
+Note: \texttt{gelman.diag()} needs at least 2 chains.
+
+
+# Recap
+
+## Recap
+
+- Bayesian inference procedure:
+    - Step 1: express an opinion about the location of mean $\mu$ and standard deviation $\sigma$ (or precision $\phi$) before sampling (prior).
+    - Step 2: take the sample (data/likelihood).
+    - Step 3: use Bayes' rule to sharpen and update the previous opinion about $\mu$ and $\sigma$ (or precision $\phi$) given the information from the sample (posterior).
+    
+\pause
+
+- For Normal data/likelihood, Normal distributions are conjugate priors for $\mu$, and Gamma distributions are conjugate priors for $\phi$. The same goes for the full conditional posterior distributions.
+
+\pause
+
+- One can either write a loop function to run a Gibbs sampler, or use JAGS.
+
+## Recap cont'd
+
+- MCMC diagnostics!
+    - Diagnostics cannot guarantee that chain has converged.
+    - Diagnostics can indicate that it has not converged.
+    - Solutions: run longer, thinning, standardize variables in multi-parameter models (can reduce auto correlations).

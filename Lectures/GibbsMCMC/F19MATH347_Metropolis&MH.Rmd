@@ -1,0 +1,437 @@
+---
+title: Metropolis and Metropolis-Hastings Algorithms
+author: Jingchen (Monika) Hu 
+institute: Vassar College
+date: MATH 347 Bayesian Statistics
+output:
+  beamer_presentation:
+    includes:
+      in_header: ../LectureStyle.tex
+slide_level: 2
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(gridExtra)
+require(ProbBayes)
+require(tidyverse)
+crcblue <- "#2905a1"
+knitr::opts_chunk$set(echo = TRUE)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+## Outline
+
+\tableofcontents[hideallsubsections]
+
+# Overview
+
+## Overview
+
+- Not all parameters have recognizable full conditional posterior distributions.
+    - If you use a non-conjugate prior distribution for a parameter, e.g. Normal for $\mu$ but Uniform for $\phi$ in the Normal sampling model.
+    
+- What to do when parameters do not have recognizable full conditional posterior distributions? \pause JAGS!
+
+- But what does JAGS do?
+
+\pause
+
+- Two important MCMC techniques: the Metropolis algorithm and the Metropolis-Hastings algorithm
+
+
+# Metropolis Algorithm
+
+## Metropolis Algorithm
+
+Suppose we want to estimate $\pi(\theta | Y)$ for some scalar $\theta$.
+
+1. Start with an initial guess at $\theta$, say $\theta^{(1)}$.
+2. Given $\theta^{(s)}$, generate a value $\theta^{(s+1)}$ as follows:
+    - Draw plausible value of $\theta$ from some symmetric distribution $J(\theta \mid \theta^{(s)})$ that is easy to simulate, like a $\textrm{Normal}(\theta^{(s)}, c)$, i.e.,
+  \begin{equation}
+  \theta^* \sim J(\theta \mid \theta^{(s)}).
+  \end{equation}
+    - If $\theta^*$ is more likely under $\pi(\theta \mid Y)$ than $\theta^{(s)}$, then we keep it as a plausible value of $\theta$, i.e., $\theta^{(s+1)} = \theta^*$.
+      - If $\theta^*$ is less likely under $\pi(\theta \mid Y)$ than $\theta^{(s)}$, then we let $\theta^{(s+1)} = \theta^*$  with probability
+\begin{equation}
+r = \frac{\pi(\theta^* \mid Y)}{\pi(\theta^{(s)} \mid Y)} = \frac{p(Y \mid \theta^*)\pi(\theta^*)}{p(Y \mid \theta^{(s)})\pi(\theta^{(s)})}.
+\end{equation}
+3. Repeat Step 2  until MCMC convergence (or for a large number of iterations, say $S = 10^5$).
+
+
+## Features of Jumping Distribution
+
+- $J(\theta \mid \theta^{(s)})$ is called the proposal distribution.
+
+- $J(\theta \mid \theta^{(s)})$ must depend only on $\theta^{(s)}$ and not previous values of $\theta$ in the chain.
+
+- $J(\theta \mid \theta^{(s)})$ must be a symmetric density,
+  i.e., 
+  
+ \begin{equation} 
+  J( \theta^{(s+1)} \mid \theta^{(s)}) = J( \theta^{(s)} \mid \theta^{(s+1)}).
+  \end{equation}
+  
+- $J(\theta \mid \theta^{(s)})$ must be such that you can get to any
+  value of the parameter space for $\theta$ eventually from any $\theta^{(s)}$.
+  
+- $J(\theta \mid \theta^{(s)})$ must be such that you don't return
+  periodically to any particular value of $\theta$.
+
+## Tuning Metropolis Algorithm
+
+- You get to specify $J(\theta \mid \theta^{(s)})$, e.g., proposal variance.
+
+- Small proposal steps: high acceptance rate, but the moves are never very large so the Markov chain is sticky and highly correlated.
+
+- Large proposal steps: quickly moves to posterior mode but gets ``stuck'' for long periods, since proposed values are usually far away from the mode.
+
+## Tuning Metropolis Algorithm cont'd
+
+- Goal is to select one that leads to roughly 35\% of new proposed
+  $\theta^{(s+1)}$  accepted (or at least between 20\% to 50\%).
+  
+- Tuning: try short runs and record percentage of acceptances, and
+  reset $J$ as necessary to achieve near 35\%.
+  
+- For example, with a Normal jumping distribution,  reset the
+  variance $c^2$ (or standard deviation $c$) until you get about 35\% acceptances.
+  
+  
+## Metropolis example: Normal-Normal model with known $\sigma$
+
+- The sampling density:
+\begin{equation}
+y_1, \cdots, y_n \mid \mu, \sigma \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+\end{equation}
+
+- The prior distribution:
+\begin{equation}
+\mu \sim \textrm{Normal}(\mu_0, \sigma_0).
+\end{equation}
+
+- The analytical posterior distribution:
+\begin{equation}
+\mu \mid y_1, \cdots, y_n, \phi \sim \textrm{Normal}\left(\frac{\phi_0 \mu_0 + n\phi\bar{y} }{\phi_0 + n \phi}, \sqrt{\frac{1}{\phi_0 + n \phi}}\right).
+\end{equation}
+
+With values of $\bar{y}$, $n$, $\phi$ (i.e. $\sigma$), $\mu_0$, $\phi_0$ (i.e. $\sigma_0$), we know exactly what this posterior distribution is, and we can use Monte Carlo simulation to generate draws of $\mu$.
+
+\pause
+
+- How about using the Metropolis algorithm to obtain draws of $\mu$?
+
+
+## Metropolis example: Normal-Normal model with known $\sigma$ cont'd
+
+Choose a Uniform jumping distribution:
+\begin{equation}
+\mu^* \sim J(\mu \mid \mu^{(s)}) = \textrm{Uniform}(\mu^{(s)} - C, \mu^{(s)} + C).
+\end{equation}
+
+- Step 1: choose a new value $\mu^*$ from $\textrm{Uniform}(\mu^{(s)} - C, \mu^{(s)} + C)$.
+
+- Step 2: calculate the ratio:
+
+\begin{equation}
+r = \frac{\pi(\mu^* \mid Y)}{\pi(\mu^{(s)} \mid Y)} = \frac{p(Y \mid \mu^*)\pi(\mu^*)}{p(Y \mid \mu^{(s)})\pi(\mu^{(s)})}.
+\end{equation}
+
+How can one compute $r$?
+
+\pause
+
+\begin{equation}
+r = \left(\frac{\prod_i \textrm{dnorm}(y_i, \mu^*, \sigma)}{\prod_i \textrm{dnorm}(y_i, \mu^{(s)}, \sigma)}\right)
+\left(\frac{\textrm{dnorm}(\mu^*, \mu_0, \sigma_0)}{\textrm{dnorm}(\mu^{(s)}, \mu_0, \sigma_0)}\right)
+\end{equation}
+
+
+## Metropolis example: Normal-Normal model with known $\sigma$ cont'd
+
+\begin{equation}
+r = \left(\frac{\prod_i \textrm{dnorm}(y_i, \mu^*, \sigma)}{\prod_i \textrm{dnorm}(y_i, \mu^{(s)}, \sigma)}\right)
+\left(\frac{\textrm{dnorm}(\mu^*, \mu_0, \sigma_0)}{\textrm{dnorm}(\mu^{(s)}, \mu_0, \sigma_0)}\right)
+\end{equation}
+
+In many cases, computing the ratio $r$ directly can be numerically unstable. Therefore, one can work with $\log(r)$.
+
+\begin{eqnarray}
+\log(r) = &&\sum_i \left(\log \textrm{dnorm}(y_i, \mu^*, \sigma) - \log \textrm{dnorm}(y_i, \mu^{(s)}, \sigma)\right) + \nonumber \\
+		&&\left(\log \textrm{dnorm}(\mu^*, \mu_0, \sigma_0) - \log \textrm{dnorm}(\mu^{(s)}, \mu_0, \sigma_0)\right). \nonumber \\
+\end{eqnarray}
+
+
+## Metropolis example: Normal-Normal model with known $\sigma$ cont'd
+
+
+```{r eval = FALSE, size = "footnotesize"}
+llik = sum(dnorm(y, mu, sigma, log = TRUE));
+  
+for (t in (thin + 1):iter){
+  mup = runif(1, mu - C, mu + C);
+  llikp = sum(dnorm(y, mup, sigma, log = TRUE));
+  
+  logr = llikp - llik + dnorm(mup, mu0, sigma0, log = TRUE) - 
+  		dnorm(mu, mu0, sigma0, log = TRUE);
+		
+  logu = log(runif(1));
+  if(logr > logu){
+  	mu = mup;
+  	llik = llikp; 
+  	acc0 = acc0 + 1; 	
+  }
+```
+
+## Metropolis example: q-Gaussian model
+
+- This is a current independent study, extending a previous MATH 347 project.
+
+- q-Gaussian distribution for the sampling model for $y_1, \cdots, y_n$:
+
+\begin{equation}
+p(y_i \mid \mu_q, \sigma_q) = \frac{1}{\sigma_q \textrm{B}(\frac{\alpha}{2}, \frac{1}{2})}\sqrt{\frac{|Z|}{u^{(1 + 1/Z)}}}
+\end{equation}
+where $Z = (q - 1)/(3 - q)$ and $a = 1 - 1/Z$ if $q < 1$; $a = 1/Z$ if $1 < q < 3$, and $u(y_i) = 1 + Z(y_i - \mu_q)^2/\sigma_q^2$.
+
+- Prior distributions:
+\begin{eqnarray}
+q &\sim& \textrm{Uniform}(0, 5/3) \\
+\mu_q &\sim& \textrm{Normal}(0, 100) \\
+\sigma_q &\sim& \textrm{Uniform}(0, 100)
+\end{eqnarray}
+
+## Metropolis example: q-Gaussian model cont'd
+
+```{r eval = FALSE, size = "footnotesize"}
+qp = runif(1, q - Cq, q + Cq)
+  if (qp <= 1 || qp >= 3) {
+    qvals[length(qvals) + 1] = q
+  } else {
+    llikep = likelihood(x, qp, sigma, mu)
+    
+    r = (llikep / llike) * dunif(qp, 1, 5/3) / dunif(q, 1, 5/3) 
+    if (!is.nan(r)) {
+      
+      u = runif(1)
+      if (r > u) {
+        q = qp
+        qvals[length(qvals) + 1] = q
+        llike = llikep
+        acceptedq = acceptedq + 1
+      } else {qvals[length(qvals) + 1] = q}
+    } else {qvals[length(qvals) + 1] = q}
+  }
+```
+
+
+# Metropolis-Hastings Algorithm
+
+## Motivation
+
+- Sometimes drawing from symmetric proposal distribution $J(\theta
+  \mid \theta^{(s)})$ not efficient, i.e., takes long time for chain to converge.
+  
+- Example of such inefficiency:
+    - Suppose $\pi(\theta \mid Y)$ has long tail like a Gamma distribution.
+    - Normal proposal with small variance: takes long time to traverse distribution repeatedly.
+    - Normal proposal with large variance: many proposed $\theta$ with small posterior density, so too small rate of acceptance.
+    
+    
+## Motivation cont'd 
+
+- In such cases, ideal to propose values in tail roughly
+  in same proportion as they appear in $\pi(\theta \mid Y)$.
+  
+- For example, $J \sim \text{Gamma}$ might be a closer
+  approximation to $\pi(\theta \mid Y)$ than $J \sim \text{Normal}$.
+  
+- But, Gamma distribution is not symmetric proposal distribution.
+
+- We have to correct the acceptance ratio $r$ for this fact;
+  otherwise, we might inaccurately favor values with  high density in
+  $J$ that may not be high density in $p(\theta \mid Y)$.
+
+- This leads to the Metropolis-Hastings (M-H) algorithm.
+
+
+## Metropolis-Hastings Algorithm
+
+Suppose we want to estimate $\pi(\theta \mid Y)$ using M-H
+
+- Propose a new $\theta^* \sim J (\theta \mid \theta^{(s)})$ where
+  $J$ is an arbitrary distribution (certain restrictions apply).
+  
+- Compute Metropolis-Hastings ratio
+$$\alpha = \min\left\{1, \frac{\pi(\theta^* \mid Y)J(\theta^{(s)} \mid \theta^*)}
+           {\pi(\theta^{(s)} \mid Y)J(\theta^* \mid  \theta^{(s)})}\right\}$$
+
+- Set
+$$\theta^{(s+1)} = \left\{
+\begin{array}[h]{ll}
+  \theta^{*} & \text{ with
+  probability } \alpha \\
+\theta^{(s)} & \text{ with
+  probability } 1 - \alpha
+\end{array} \right.
+$$
+
+\pause
+
+- Recall in Metropolis algorithm, the ratio is $r = \frac{p(\theta^* | Y)}{p(\theta^{(s)} | Y)}$.
+
+- Think about $\frac{J(\theta^{(s)} \mid \theta^*)}{J(\theta^* \mid  \theta^{(s)})}$ as a correction factor.
+
+
+## Features of M-H Jumping Distribution
+
+- It is easy to sample from $J( \theta \mid \theta^{(s)})$ and to compute $\alpha$.
+
+- $J( \theta \mid \theta^{(s)})$ must depend only on
+  $\theta^{(s)}$ and not previous values of $\theta$ in the chain.
+  
+- $J(\theta \mid \theta^{(s)})$ must be such that you can get to any
+  value of the parameter space for $\theta$ eventually from any $\theta^{(s)}$.
+  
+- $J(\theta \mid \theta^{(s)})$ must be such that you don't return
+  periodically to any particular value of $\theta$.
+  
+- You get to specify $J(\theta \mid \theta^{(s)})$.  Use tuning to select
+  one that leads to roughly 35\% of new proposed
+  $\theta^{*}$  accepted.
+
+- Can use different jumping distributions in different iterations, i.e., $J$ is allowed to depend on $s$. But $J$ cannot dependent on the draws, i.e., $\theta^{(s)}$.
+
+
+## Special Cases of M-H Algorithm
+
+- Metropolis algorithm: symmetric jump $J( \theta^* \mid \theta^{(s)}) = J(\theta^{(s)} \mid \theta^*)$
+
+$$\alpha = \min\left\{1, \frac{\pi(\theta^* \mid Y)}
+           {\pi(\theta^{(s)} \mid Y)}\right\}$$
+           
+- Gibbs sampler: jumping distribution equals the target distribution,
+i.e., $J( \theta^* \mid \theta^{(s)}) = \pi(\theta^* \mid Y)$, hence
+
+$$\alpha = \min\left\{1, \frac{\pi(\theta^* \mid Y)p(\theta^{(s)} \mid Y)}
+           {\pi(\theta^{(s)} \mid Y)p(\theta^* \mid Y)}\right\} = 1$$
+
+- Since $J$ can be different in different iterations, we can update each dimension
+of the parameter vector one at a time, using either Gibbs, Metropolis, or M-H update.
+
+
+## M-H example: Normal-Normal model with known $\sigma$
+
+- The sampling density:
+\begin{equation}
+y_1, \cdots, y_n \mid \mu, \sigma \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).
+\end{equation}
+
+- The prior distribution:
+\begin{equation}
+\mu \sim \textrm{Normal}(\mu_0, \sigma_0).
+\end{equation}
+
+- The analytical posterior distribution:
+\begin{equation}
+\mu \mid y_1, \cdots, y_n, \phi \sim \textrm{Normal}\left(\frac{\phi_0 \mu_0 + n\phi\bar{y} }{\phi_0 + n \phi}, \sqrt{\frac{1}{\phi_0 + n \phi}}\right).
+\end{equation}
+
+With values of $\bar{y}$, $n$, $\phi$ (i.e. $\sigma$), $\mu_0$, $\phi_0$ (i.e. $\sigma_0$), we know exactly what this posterior distribution is, and we can use Monte Carlo simulation to generate draws of $\mu$.
+
+- How about using the Metropolis-Hastings algorithm to obtain draws of $\mu$?
+
+
+## M-H example: Normal-Normal model with known $\sigma$ cont'd
+
+Choose a Gamma jumping distribution:
+\begin{equation}
+\mu^* \sim J(\mu \mid \mu^{(s)}) = \textrm{Gamma}(\mu^{(s)}, 1).
+\end{equation}
+
+- Step 1: choose a new value $\mu^*$ from $\textrm{Gamma}(\mu^{(s)}, 1)$. 
+
+- Step 2: calculate the ratio:
+
+\scriptsize{
+\begin{equation}
+\alpha = \min\left\{1, \frac{\pi(\mu^* \mid Y)J(\mu^{(s)} \mid \mu^*)}
+           {\pi(\mu^{(s)} \mid Y)J(\mu^* \mid \mu^{(s)})}\right\} = \min\left\{1, \frac{p(Y \mid \mu^*)\pi(\mu^*)J(\mu^{(s)} \mid \mu^*)}
+           {p(Y \mid \mu^{(s)})\pi(\mu^{(s)})J(\mu^* \mid \mu^{(s)})}\right\}.
+\end{equation}
+}
+
+\normalsize{
+How can one compute the ratio $\alpha^*$?
+}
+
+\pause
+
+\begin{eqnarray}
+\alpha^* = &&\left(\frac{\prod_i \textrm{dnorm}(y_i, \mu^*, \sigma)}{\prod_i \textrm{dnorm}(y_i, \mu^{(s)}, \sigma)}\right)
+\left(\frac{\textrm{dnorm}(\mu^*, \mu_0, \sigma_0)}{\textrm{dnorm}(\mu^{(s)}, \mu_0, \sigma_0)}\right) \nonumber \\
+		&& \left(\frac{\textrm{dgamma}(\mu^*, \mu^{(s)}, 1)}{\textrm{dgamma}(\mu^{(s)}, \mu^*, 1)}\right). 
+\end{eqnarray}
+
+
+## M-H example: Normal-Normal model with known $\sigma$ cont'd
+
+\scriptsize{
+\begin{equation}
+\alpha^* = \left(\frac{\prod_i \textrm{dnorm}(y_i, \mu^*, \sigma)}{\prod_i \textrm{dnorm}(y_i, \mu^{(s)}, \sigma)}\right)
+\left(\frac{\textrm{dnorm}(\mu^*, \mu_0, \sigma_0)}{\textrm{dnorm}(\mu^{(s)}, \mu_0, \sigma_0)}\right) 
+		\left(\frac{\textrm{dgamma}(\mu^*, \mu^{(s)}, 1)}{\textrm{dgamma}(\mu^{(s)}, \mu^*, 1)}\right). 
+\end{equation}
+}
+
+\normalsize{
+In many cases, computing the ratio $r$ directly can be numerically unstable. Therefore, one can work with $\log(r)$.
+}
+
+\begin{eqnarray}
+\log(r) = &&\sum_i \left(\log \textrm{dnorm}(y_i, \mu^*, \sigma) - \log \textrm{dnorm}(y_i, \mu^{(s)}, \sigma)\right) + \nonumber \\
+		&& \left(\log \textrm{dnorm}(\mu^*, \mu_0, \sigma_0) - \log \textrm{dnorm}(\mu^{(s)}, \mu_0, \sigma_0)\right) + \nonumber \\
+		&& \left(\log \textrm{dgamma}(\mu^*, \mu^{(s)}, 1) - \log \textrm{dgamma}(\mu^{(s)}, \mu^*, 1)\right). \nonumber \\
+\end{eqnarray}
+
+
+## M-H example: Normal-Normal model with known $\sigma$ cont'd
+
+This is the Metropolis algorithm. How to update it for an M-H algorithm?
+
+```{r eval = FALSE, size = "footnotesize"}
+llik = sum(dnorm(y, mu, sigma, log = TRUE));
+  
+for (t in (thin + 1):iter){
+  mup = runif(1, mu - C, mu + C);
+  llikp = sum(dnorm(y, mup, sigma, log = TRUE));
+  
+  logr = llikp - llik + dnorm(mup, mu0, sigma0, log = TRUE) - 
+  		dnorm(mu, mu0, sigma0, log = TRUE);
+		
+  logu = log(runif(1));
+  if(logr > logu){
+  	mu = mup;
+  	llik = llikp; 
+  	acc0 = acc0 + 1; 	
+  }
+```
+
+# Summary
+
+## Multi-parameter MCMC
+
+With multiple parameters, a common strategy is to set up an MCMC 
+  sampler overall, and update each parameter using
+  
+- Draws from the full conditional when they are readily available (i.e. a Gibbs step).
+
+- Draws from a Metropolis/M-H step otherwise.

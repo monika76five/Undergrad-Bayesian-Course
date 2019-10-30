@@ -1,0 +1,373 @@
+---
+title: "Gibbs sampler and MCMC (R scripts)"
+author: "Jingchen (Monika) Hu"
+date: "MATH 347 Bayesian Statistics"
+output:
+  pdf_document: default
+  html_document:
+    number_sections: yes
+institute: Vassar College
+fontsize: 11pt
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(gridExtra)
+require(ProbBayes)
+require(tidyverse)
+crcblue <- "#2905a1"
+knitr::opts_chunk$set(echo = TRUE)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+# Installing the necessary packages
+
+```{r, eval = FALSE}
+install.packages("devtools")
+require(devtools)
+devtools::install_github("bayesball/ProbBayes")
+
+require(ggplot2)
+require(gridExtra)
+require(ProbBayes)
+require(tidyverse)
+crcblue <- "#2905a1"
+```
+
+# Example: Expenditures in the Consumer Expenditure Surveys
+
+## The TOTEXPPQ variable in the CE sample
+
+```{r message = FALSE}
+CEsample <- read_csv("CEsample1.csv")
+
+summary(CEsample$TotalExpLastQ)
+sd(CEsample$TotalExpLastQ)
+```
+
+```{r fig.align = "center"}
+ggplot(data = CEsample, aes(TotalExpLastQ)) +
+  geom_density(color = crcblue, size = 1) + 
+  labs(title = "Total expenditure last Q") +
+  theme_grey(base_size = 8, base_family = "") 
+```
+
+## Log transformation of the TOTEXPPQ variable
+
+```{r fig.align = "center"}
+CEsample$LogTotalExpLastQ <- log(CEsample$TotalExpLastQ)
+ggplot(data = CEsample, aes(LogTotalExpLastQ)) +
+  geom_density(color = crcblue, size = 1) + 
+  labs(title = "Total expenditure last Q (log)") +
+  theme_grey(base_size = 8, base_family = "") 
+```
+
+
+## The Normal distribution
+
+```{r fig.align = "center"}
+ggplot(data = data.frame(y = c(-5, 5)), aes(y)) + 
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 0.5), aes(color = "Normal(0, 0.5)")) +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1), aes(color = "Normal(0, 1)")) + 
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 2), aes(color = "Normal(0, 2)")) +
+  stat_function(fun = dnorm, args = list(mean = -2, sd = 0.5), aes(color = "Normal(-2, 0.5)")) +
+  ylab("f(y)")
+```
+
+
+
+# Prior and posterior distributions for mean AND standard deviation
+
+## Use R/RStudio to run a Gibbs sampler
+
+```{r message = FALSE}
+gibbs_normal <- function(input, S, seed){
+  set.seed(seed)
+  ybar <- mean(input$y)
+  n <- length(input$y)
+  para <- matrix(0, S, 2)
+  phi <- input$phi_init
+  for(s in 1:S){
+    mu1 <- (input$mu_0/input$sigma_0^2 + n*phi*ybar)/
+    (1/input$sigma_0^2 + n*phi)
+    sigma1 <- sqrt(1/(1/input$sigma_0^2 + n*phi))
+    mu <- rnorm(1, mean = mu1, sd = sigma1)
+    alpha1 <- input$alpha + n/2
+    beta1 <- input$beta + sum((input$y - mu)^2)/2 
+    phi <- rgamma(1, shape = alpha1, rate = beta1)
+    para[s, ] <- c(mu, phi)
+  }
+  para }
+```
+
+
+- Run the Gibbs sampler:
+
+\vspace{3mm}
+
+```{r message = FALSE}
+input <- list(y = CEsample$LogTotalExpLastQ, mu_0 = 5,sigma_0 = 1,
+alpha = 1, beta = 1,phi_init = 1)
+output <- gibbs_normal(input, S = 10000, seed = 123)
+```
+
+- Extract posterior draws of \texttt{mu} and \texttt{phi} from the Gibbs sampler output:
+
+\vspace{3mm}
+
+```{r message = FALSE}
+para_post <- as.data.frame(output)
+names(para_post) <- c("mu", "phi")
+```
+
+
+```{r fig.align = "center"}
+ggplot(para_post, aes(mu)) + 
+  geom_density(size = 2, color = crcblue) + 
+  labs(title = "Posterior draws of mu") +
+  theme_grey(base_size = 8, 
+  base_family = "") 
+```
+
+```{r message = FALSE}
+quantile(para_post$mu, c(0.025,0.975))
+```
+
+
+```{r fig.align = "center"}
+ggplot(para_post, aes(phi)) + 
+  geom_density(size = 2, color = crcblue) + 
+  labs(title = "Posterior draws of phi") +
+  theme_grey(base_size = 8, 
+  base_family = "") 
+```
+
+```{r message = FALSE}
+quantile(para_post$phi, c(0.025,0.975))
+```
+
+
+# Use JAGS (Just Another Gibbs Sampler) and Bayesian inferences
+
+## JAGS for unknown mean and standard deviation case 
+
+- R package \texttt{runjags} to run Markov chain Monte Carlo simulations.
+
+- Descriptive of the sampling model and the prior.
+
+
+- Installing JAGS software and \texttt{runjags} R package
+    - Download JAGS at [this link](https://sourceforge.net/projects/mcmc-jags/files/JAGS/4.x/)
+    - Install and load \texttt{runjags} R package
+    
+    \vspace{3mm}
+    
+```{r message = FALSE, eval = FALSE}
+install.packages("runjags")
+```
+    
+```{r message = FALSE}
+library(runjags)
+```
+
+- Only need to focus on the sampling density and the prior:
+    - The sampling density: 
+    \begin{equation}
+    y_1, \cdots, y_n \mid \mu, \sigma \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma).      \nonumber
+    \end{equation}
+    
+    - The prior distributions:
+    \begin{eqnarray}
+    \mu &\sim& \textrm{Normal}(\mu_0, \sigma_0), \nonumber \\
+    1/\sigma^2 = \phi &\sim& \textrm{Gamma}(\alpha, \beta). \nonumber
+    \end{eqnarray}
+
+    
+```{r message = FALSE}
+modelString <- "
+model{
+
+# The sampling density
+for (i in 1:N) {
+y[i] ~ dnorm(mu, phi)
+}
+
+# The prior distributions
+mu ~ dnorm(mu_0, phi_0)
+phi ~ dgamma(alpha, beta)
+
+}
+"
+```
+
+
+- Pass the data and hyperparameter values to JAGS:
+
+\vspace{3mm}
+
+```{r message = FALSE}
+y <- CEsample$LogTotalExpLastQ
+N <- length(y)
+the_data <- list("y" = y, "N" = N, "mu_0" = 5, "phi_0" = 1/1^2, 
+"alpha" = 1,"beta" = 1)
+```
+
+
+- Run the JAGS code for this model:
+
+\vspace{3mm}
+
+```{r message = FALSE}
+posterior <- run.jags(modelString,
+                  data = the_data,
+                  monitor = c("mu", "phi"),
+                  n.chains = 1,
+                  adapt = 1000,
+                  burnin = 2000,
+                  sample = 5000,
+                  thin = 1)
+```
+
+
+- Obtain posterior summaries of \texttt{mu} and \texttt{phi}:
+
+\vspace{3mm}
+
+```{r message = FALSE}
+summary(posterior) 
+```
+
+# MCMC diagnostics
+
+## Trace plots example
+
+```{r fig.align = "center"}
+plot(posterior, vars = "mu")
+```
+
+
+## ACF plots example
+
+```{r fig.align = "center"}
+plot(posterior, vars = "mu")
+```
+
+## Effective sample size example
+
+- The column of \texttt{SSeff}; recall \texttt{sample} is 5000.
+
+\vspace{3mm}
+
+```{r}
+summary(posterior) 
+```
+
+
+## MCMC diagnostics for the CE example
+
+```{r fig.align = "center"}
+plot(posterior, vars = "mu")
+```
+
+## MCMC diagnostics for the CE example cont'd
+
+```{r fig.align = "center"}
+plot(posterior, vars = "phi")
+```
+
+
+## Gelman-Rubin diagnostics example
+
+- Create intinial values of \texttt{mu} and \texttt{phi}:
+
+\vspace{3mm}
+
+```{r}
+inits1 <- dump.format(list(mu = 1, phi = 1, 
+			.RNG.name="base::Super-Duper", .RNG.seed = 1))
+inits2 <- dump.format(list(mu = 10, phi = 10,
+			.RNG.name="base::Wichmann-Hill", .RNG.seed = 2))
+```
+
+
+- Feed in \texttt{inits1} and \texttt{inits2}, and let \texttt{n.chains = 2}:
+
+\vspace{3mm}
+
+```{r}
+posterior_2chains <- run.jags(modelString,
+                      data = the_data,
+                      monitor = c("mu", "phi"),
+                      n.chains = 2,
+                      inits=c(inits1, inits2), 
+                      adapt = 1000,
+                      burnin = 2000,
+                      sample = 5000,
+                      thin = 1)
+```
+
+## Gelman-Rubin diagnostics example cont'd
+
+- Return \texttt{psrf} from the output, as Gelman-Rubin diagnostic results:
+
+\vspace{3mm}
+
+```{r}
+posterior_2chains$psrf
+```
+
+## MCMC diagnostics for the CE example, 2 chains
+
+```{r fig.align = "center"}
+plot(posterior_2chains, vars = "mu")
+```
+
+
+
+## Useful diagnostics/functions in coda package
+
+- One needs to convert parameter draws into an MCMC object. For example:
+
+\vspace{3mm}
+
+```{r message = FALSE, eval = FALSE}
+install.packages("coda")
+```
+
+```{r}
+library(coda)
+output <- gibbs_normal(input, S = 10000, seed = 123)
+para_post = as.data.frame(output)
+names(para_post) = c("mu", "phi")
+```
+
+
+- Then one can perform MCMC diagnostics. For example: 
+
+\vspace{3mm}
+
+```{r}
+mu.mcmc = as.mcmc(para_post$mu)
+```
+
+```{r}
+traceplot(mu.mcmc)
+autocorr.plot(mu.mcmc)
+effectiveSize(mu.mcmc)
+```
+
+```{r message = FALSE, eval = FALSE}
+gelman.diag(mu.mcmc)
+```
+
+Note: \texttt{gelman.diag()} needs at least 2 chains.
+
+
+# Recap
+

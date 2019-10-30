@@ -1,0 +1,133 @@
+\documentclass[11pt]{article}
+\usepackage[top=2.1cm,bottom=2cm,left=2cm,right= 2cm]{geometry}
+%\geometry{landscape}                % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{changepage}
+\usepackage{lscape}
+\usepackage{ulem}
+\usepackage{multicol}
+\usepackage{dashrule}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{enumerate}
+\usepackage{amsmath}
+
+\newenvironment{rcases}
+  {\left.\begin{aligned}}
+  {\end{aligned}\right\rbrace}
+
+\newcommand{\urlwofont}[1]{\urlstyle{same}\url{#1}}
+\newcommand{\degree}{\ensuremath{^\circ}}
+\newcommand{\hl}[1]{\textbf{\underline{#1}}}
+
+
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\newenvironment{choices}{
+\begin{enumerate}[(a)]
+}{\end{enumerate}}
+
+%\newcommand{\soln}[1]{\textcolor{MidnightBlue}{\textit{#1}}}	% delete #1 to get rid of solutions for handouts
+\newcommand{\soln}[1]{ \vspace{1.35cm} }
+
+%\newcommand{\solnMult}[1]{\textbf{\textcolor{MidnightBlue}{\textit{#1}}}}	% uncomment for solutions
+\newcommand{\solnMult}[1]{ #1 }	% uncomment for handouts
+
+%\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{black}{(#1)}}} }	% uncomment for handouts
+\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{blue}{(#1)}}} }	% uncomment for handouts
+
+\newcommand{\note}[1]{ \textbf{\textcolor{red}{[#1]}} }	% uncomment for handouts
+
+\begin{document}
+
+
+\enlargethispage{\baselineskip}
+
+Fall 2019 \hfill Jingchen (Monika) Hu\\
+
+\begin{center}
+{\huge MATH 347 Gibbs sampler for Gamma-Gamma-Poisson (Solutions)}
+\end{center}
+\vspace{0.5cm}
+
+
+In class, we have demonstrated Gibbs sampling for a two-parameter Normal model, where both $\mu$ and $\sigma$ are unknown. In fact, the Gibbs sampling algorithm works for any two-parameter model, or multi-parameter model when the number of parameters is more than 2. 
+
+Recall the Gamma-Poisson conjugate model we have discussed before, where the sampling model is a $Y_1, \cdots, Y_n \overset{i.i.d.}{\sim} \textrm{Poisson}(\lambda)$, and the conjugate prior for proportion $\lambda$ is a Gamma, where $\lambda \sim \textrm{Gamma}(a, b)$. We know that the posterior distribution of $\lambda$ is also a Gamma, where $\lambda \mid Y_1 = y_1, \cdots, Y_n = y_n \sim \textrm{Gamma}(a + \sum_{i=1}^{n}y_i, b + n)$. 
+
+Note that the Poisson sampling model has the following density function:
+\begin{equation}
+P(Y = y \mid \lambda) = \lambda^{y}\exp(-\lambda)/y!, \,\,\, \text{for}\,\,\, y \in \{0, 1, 2, \cdots\}.
+\end{equation}
+
+And the Gamma prior distribution has the following density function:
+\begin{equation}
+\pi(\lambda) = \frac{b^a}{\Gamma(a)}\lambda^{a-1}\exp(-b\lambda),\,\, \text{for}\,\, \lambda, a, b >0.
+\end{equation}
+
+{\underline{Now consider that $a = 1$ and $b$ is unknown, and we give a Gamma prior for $b$, as in $b \sim \textrm{Gamma}(1, 1)$.}} 
+
+We come to the following model:
+\begin{eqnarray}
+Y_1, \cdots, Y_n  \mid \lambda, b &\sim& \textrm{Poisson}(\lambda), \\
+\lambda \mid b &\sim& \textrm{Gamma}(1, b), \\
+b &\sim& \textrm{Gamma}(1, 1).
+\end{eqnarray}
+
+How to sample the joint posterior distribution of $(\lambda, b)$? Gibbs sampler!
+
+\begin{itemize}
+\item Step 1: Write out the likelihood function $L(\lambda, b)$.
+\begin{eqnarray*}
+L(\lambda, b) &=& \prod_{i=1}^{n} \frac{\lambda^{y_i}\exp(-\lambda)}{y_i!} \\
+&\propto& \lambda^{\sum_{i=1}^{n} y_i} \exp(-n\lambda).
+\end{eqnarray*}
+
+\item Step 2: Write out the joint prior distribution $\pi(\lambda, b) $.
+\begin{eqnarray*}
+\pi(\lambda, b) = \pi(\lambda \mid b) \pi(b) &=&  \frac{b^1}{\Gamma(1)}\lambda^{1-1}\exp(-b\lambda)  \frac{1^1}{\Gamma(1)}b^{1-1}\exp(-b) \\
+&\propto& b\exp(-(\lambda b+ b)).
+\end{eqnarray*}
+
+\item Step 3: Write out the joint posterior distribution $\pi(\lambda, b \mid y_1, \cdots, y_n)$.
+\begin{eqnarray*}
+\pi(\lambda, b \mid y_1, \cdots, y_n) &\propto& L(\lambda, b) \pi(\lambda, b) \\
+&\propto& \lambda^{\sum_{i=1}^{n}y_i + 1 - 1} b \exp(-(n\lambda + \lambda b + b)).
+\end{eqnarray*}
+
+\item Step 4: Derive the full conditional posterior distribution for each parameter: $(\lambda, b)$
+\begin{itemize}
+\item Full conditional posterior distribution for $\lambda$: $\pi(\lambda \mid y_1, \cdots, y_n, b)$
+\begin{equation}
+\pi(\lambda \mid y_1, \cdots, y_n, b) \propto \lambda^{\sum_{i=1}^{n} y_i + 1 - 1} \exp(-(n+b)\lambda),
+\end{equation}
+which means $\lambda \mid y_1, \cdots, y_n, b$ follows
+\begin{equation*}
+\lambda \mid y_1, \cdots, y_n, b \sim \textrm{Gamma}(\sum_{i=1}^{n} y_i + 1, n + b).
+\end{equation*}
+
+\item Full conditional posterior distribution for $b$: $\pi(b \mid y_1, \cdots, y_n, \lambda)$
+\begin{equation}
+\pi(b \mid y_1, \cdots, y_n, \lambda) \propto b  \exp(-(\lambda+1)b),
+\end{equation}
+which means $b \mid y_1, \cdots, y_n, \lambda$ follows
+\begin{equation*}
+b \mid y_1, \cdots, y_n, \lambda \sim \textrm{Gamma}(2, \lambda + 1).
+\end{equation*}
+\end{itemize}
+
+\item Step 5: Code your Gibbs sampler.
+
+\end{itemize}
+
+
+
+
+
+\end{document} 

@@ -1,0 +1,96 @@
+\documentclass[11pt]{article}
+\usepackage[top=2.1cm,bottom=2cm,left=2cm,right= 2cm]{geometry}
+%\geometry{landscape}                % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{changepage}
+\usepackage{lscape}
+\usepackage{ulem}
+\usepackage{multicol}
+\usepackage{dashrule}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\newenvironment{rcases}
+  {\left.\begin{aligned}}
+  {\end{aligned}\right\rbrace}
+
+\newcommand{\urlwofont}[1]{\urlstyle{same}\url{#1}}
+\newcommand{\degree}{\ensuremath{^\circ}}
+\newcommand{\hl}[1]{\textbf{\underline{#1}}}
+
+
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\newenvironment{choices}{
+\begin{enumerate}[(a)]
+}{\end{enumerate}}
+
+%\newcommand{\soln}[1]{\textcolor{MidnightBlue}{\textit{#1}}}	% delete #1 to get rid of solutions for handouts
+\newcommand{\soln}[1]{ \vspace{1.35cm} }
+
+%\newcommand{\solnMult}[1]{\textbf{\textcolor{MidnightBlue}{\textit{#1}}}}	% uncomment for solutions
+\newcommand{\solnMult}[1]{ #1 }	% uncomment for handouts
+
+%\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{black}{(#1)}}} }	% uncomment for handouts
+\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{blue}{(#1)}}} }	% uncomment for handouts
+
+\newcommand{\note}[1]{ \textbf{\textcolor{red}{[#1]}} }	% uncomment for handouts
+
+\begin{document}
+
+
+\enlargethispage{\baselineskip}
+
+Fall 2019 MATH 347 \hfill Jingchen (Monika) Hu\\
+
+\begin{center}
+{\huge Reading Guide for Explaining the Gibbs Sampler}	\\
+Casella and George (1992)\footnote{Casella, G. and George, E. I. (1992), ``Explaining the Gibbs Sampler", {\it{The American Statistician}}, {\bf{46}}(3), 167-174.}
+\end{center}
+\vspace{0.5cm}
+
+
+\begin{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\item[1.] [Section 2] How does Gelfand and Smith (1990) suggest to obtain an approximate sample from $f(x)$? How is it different from or similar to the approach we talked about in class? What are the advantages and disadvantages of each approach?
+\vspace{5mm}
+
+\item[2.] [Section 2] The authors claim ``Gibbs sampling can be used to estimate the density itself by averaging the final conditional densities from each Gibbs sequence." What is the theory behind this claim? How does Figure 3 support this claim?
+\vspace{5mm}
+
+\item[3.] [Section 2] Two simulations in Figure 1 and Figure 3: What are the similarities and differences? Why the conditional carries more information than the marginal?
+\vspace{5mm}
+
+\item[4.] [Section 3] Write down marginal distribution of $y$, and verify the conditional probabilities $A_{y|x}$ and $A_{x|y}$. Also, verify $A_{x|x} = A_{y|x}A_{x|y}$ and $f_xA_{x|x} = f_xA_{y|x}A_{x|y} = f_x$.
+\vspace{5mm}
+
+\item[5.] [Section 4] What is a fixed point integral equation in the bivariate case? How does it help illustrate how sampling from conditionals produces a marginal distribution? Hint: check equations (3.5), (4.1), and (4.2).
+\vspace{5mm}
+
+\item[6.] [Section 4] The authors claimed ``a defining characteristic of the Gibbs sampler is that it always uses the full set of univariate conditionals to define the iteration." Explain this claim by illustrating how a Gibbs sampler works with $k$ parameters ($\theta_1, \theta_2, \cdots, \theta_k$).
+\vspace{5mm}
+
+\item[7.] [Section 5] Summarize different approaches to sampling the Gibbs sequence.
+\vspace{5mm}
+
+
+
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+\end{document} 
