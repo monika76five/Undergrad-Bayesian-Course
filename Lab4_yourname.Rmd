@@ -1,0 +1,187 @@
+---
+output:
+  pdf_document: default
+header-includes:
+  - \usepackage{color}
+  - \usepackage[dvipsnames]{xcolor}
+---
+----
+ Fall 2019: MATH 347 Bayesian Statistics
+---
+
+```{r}
+
+```
+## \textcolor{RoyalBlue}{{Lab 4: Hierarchical models for Kdrama rating}}
+#### Author:_____(Insert your name here) _____
+
+#### \textcolor{Bittersweet}{Total Grade for Lab 4: /18} 
+#### \textcolor{Bittersweet}{Comments (optional)} 
+
+## \textcolor{RoyalBlue}{Template for lab report}
+\textbf{Instructions:} This is the template you will use to type up your responses to the exercises. To produce a document that you can print out and turn in just click on Knit PDF above. All you need to do to complete the lab is to type up your BRIEF answers and the R code (when necessary) in the spaces provided below. 
+
+It is strongly recommended that you knit your document regularly (minimally after answering each exercise) for two reasons. 
+
+  1. Ensure that there are no errors in your code that would prevent the document from knitting.
+  2. View the instructions and your answers in a more legible, attractive format.
+
+
+```{r, eval=FALSE}
+# Any text BOTH preceded by a hashtag AND within the ```{r} ``` code chunk is a comment. 
+# R indicates a comment by turning the text green in the editor, and brown in the knitted
+# document. 
+# Comments are not treated as a command to be interpreted by the computer.
+# They normally (briefly!) describe the purpose of your command or chunk in plain English.
+# However, for this class, they will have a different goal, as the text above and below 
+# each chunk should sufficiently describe the chunk's contents.
+# For this class, comments will be used to indicate where your code should go, or to give
+# hints for what the code should look like.
+```
+## \textcolor{RoyalBlue}{Overview}
+
+We have explored the Kdrama rating dataset with a hierarchical model. The sampling density, the two-stage prior distribution for $\mu_j$'s and the prior distribution for $\sigma$ are presented below.
+
+\begin{itemize}
+\item The sampling density for group $j$, and $j = 1, \cdots, J$:
+\begin{eqnarray}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, \sigma),
+\end{eqnarray}
+where $i = 1, \cdots, n_j$ and $n_j$ is the number of observations in group $j$. 
+\item The stage 1 prior distribution for $\mu_j$ :
+\begin{eqnarray}
+\mu_j \sim \textrm{Normal}(\mu, \tau).
+\end{eqnarray}
+\item The stage 2 prior distribution for $\mu_j$:
+\begin{eqnarray}
+\mu, \tau \sim \textrm{g}(\mu, \tau).
+\end{eqnarray}
+Hyperpriors:
+\begin{eqnarray}
+\mu \mid \mu_0, \gamma_0 &\sim& \textrm{Normal}(\mu_0, \gamma_0),\\
+1/\tau^2 \mid \alpha_{\tau}, \beta_{\tau} &\sim& \textrm{Gamma}(\alpha_{\tau}, \beta_{\tau}).
+\end{eqnarray}
+\item The prior distribution for $\sigma$:
+\begin{eqnarray}
+1/\sigma^2 \sim \textrm{Gamma}(\alpha_{\sigma}, \beta_{\sigma}).
+\end{eqnarray}
+\end{itemize}
+
+We have set $\mu_0 = 0.1, \gamma_0 = 0.5, \alpha_{\tau} = \beta_{\tau} = \alpha_{\sigma} = \beta_{\sigma} = 1$, and obtained posterior summaries below:
+\vspace{5mm}
+
+
+\begin{verbatim}
+        Lower95 Median Upper95   Mean     SD Mode    MCerr MC%ofSD SSeff    AC.10 psrf
+mu      -0.4905 0.1080   0.668 0.1047 0.2884   NA 0.004181     1.4  4758 -0.01052   NA
+tau      0.3527 0.6585   1.250 0.7206 0.2749   NA 0.004198     1.5  4288 -0.01511   NA
+mu_j[1] -0.0720 0.0713   0.217 0.0727 0.0724   NA 0.001024     1.4  5000  0.00223   NA
+mu_j[2] -0.0569 0.0994   0.253 0.0993 0.0800   NA 0.001131     1.4  5000  0.01881   NA
+mu_j[3] -0.2415 0.0448   0.349 0.0427 0.1511   NA 0.002073     1.4  5310 -0.00797   NA
+mu_j[4] -0.0248 0.1914   0.399 0.1924 0.1075   NA 0.001520     1.4  5000 -0.01727   NA
+sigma    0.2011 0.2616   0.333 0.2650 0.0346   NA 0.000554     1.6  3908  0.00988   NA
+\end{verbatim}
+
+
+
+We have noticed the issues of negative draws of some parameter which should have been strictly non-negative, including \texttt{mu}, \texttt{mu\_j[1]} through \texttt{mu\_j[4]}, corresponding to $\mu$ and $\mu_1$ through $\mu_4$ in the model. Since these 5 parameters indicate the mean of the mean rating, and the means of ratings, they should be non-negative. 
+
+This lab is to explore different prior specifications that would prevent this from happening. 
+
+
+## \textcolor{RoyalBlue}{Truncated Normal distributions for the hyperprior for $\mu$ and priors for $\mu_j$'s}
+
+We know that $\mu$ and $\mu_j$'s should be non-negative. If we still want to use a hyperprior/prior distribution related to the Normal distribution, we can consider the truncated normal distribution.
+
+### \textcolor{RoyalBlue}{The truncated Normal distribution}
+From Wikipedia: The truncated normal distribution is the probability distribution derived from that of a normally distributed random variable by bounding the random variable from either below or above (or both). 
+
+Suppose $Y \sim \textrm{Normal}(\mu, \sigma)$ has a Normal distribution and lies within the interval $Y \in (a, b)$, $-\infty \leq a < b \leq \infty$. Then $Y$ conditional on $a < Y < b$ has a truncated Normal distribution, with pdf:
+
+\begin{equation}
+f(y \mid \mu, \sigma, a, b) = \frac{\phi(\frac{y - \mu}{\sigma})}{\sigma \left(\Phi(\frac{b - \mu}{\sigma}) - \Phi(\frac{a - \mu}{\sigma})\right)},
+\end{equation}
+where $\phi(.)$ is the pdf of the standard Normal distribution (i.e. $\textrm{Normal}(0,1)$)and $\Phi(.)$ is the cdf (cumulative distribution function) of the standard Normal distribution.
+
+
+
+### \textcolor{RoyalBlue}{Specifying a truncated Normal hyperprior/prior in JAGS}
+
+In the previous hierarchical model, where regular Normal prior distribution is assigned to $\mu_j$, the syntax is:
+
+```{r, eval=FALSE}
+for (j in 1:J){
+mu_j[j] ~ dnorm(mu, invtau2)
+}
+```
+
+If we want to use a truncated Normal prior distribution with only non-negative values of $\mu_j$'s, one can use the following syntax:
+
+```{r, eval=FALSE}
+for (j in 1:J){
+mu_j[j] ~ dnorm(mu, invtau2)T(0,)
+}
+```
+
+#### \textcolor{RoyalBlue}{Exercise 1:} Give appropriate truncated Normal prior distribution for $\mu_j$'s and truncated Normal hyperprior distribution for $\mu$. Run the new hierarchical model, and obtain the posterior summaries for all 7 parameters. Verify that the posterior draws of \texttt{mu} and \texttt{mu\_j[1]} through \texttt{mu\_j[4]} are all non-negative. Include the 2-by-2 traceplot + cdf + historgram + ACF plot for \texttt{mu\_j[1]} (Hint: use the \texttt{plot(posterior, vars = "mu\_j[1]"} command). Comment on the MCMC diagnostics for \texttt{mu\_j[1]}.
+
+
+#### \textcolor{Bittersweet}{Grade for Exercise 1: /6} 
+#### \textcolor{Bittersweet}{Comments: }
+
+
+
+## \textcolor{RoyalBlue}{Log-normal distributions for the hyperprior for $\mu$ and priors for $\mu_j$'s}
+
+In addition to truncated Normal distribution, we can also consider the log-normal distribution.
+
+### \textcolor{RoyalBlue}{The log-normal distribution}
+
+From Wikipedia: a log-normal (or lognormal) distribution is a continuous probability distribution of a random variable whose logarithm is Normally distributed. Thus, if the random variable $Y$ is log-normally distributed, then $Y' = \textrm{ln}(Y)$ has a Normal distribution. 
+
+A random variable which is log-normally distributed takes only positive real values, an appealing feature for $\mu$ and $\mu_j$'s in the Kdrama rating application.
+
+If $\textrm{Y} \sim \textrm{Normal}(\mu, \sigma)$, its pdf is:
+
+\begin{equation}
+f(y \mid \mu, \sigma) = \frac{1}{y} \frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(\textrm{ln}(y) - \mu)^2}{2\sigma^2}\right).
+\end{equation}
+
+
+
+### \textcolor{RoyalBlue}{Specifying a log-normal hyperprior/prior in JAGS}
+
+In the previous hierarchical model, where regular Normal prior distribution is assigned to $\mu_j$, the syntax is:
+
+```{r, eval=FALSE}
+for (j in 1:J){
+mu_j[j] ~ dnorm(mu, invtau2)
+}
+```
+
+If we want to use a log-normal prior distribution with only non-negative values of $\mu_j$'s, one can use the following syntax:
+
+```{r, eval=FALSE}
+for (j in 1:J){
+mu_j[j] ~ dlnorm(mu, invtau2)
+}
+```
+
+
+#### \textcolor{RoyalBlue}{Exercise 2:} Give appropriate log-normal prior distribution for $\mu_j$'s and log-normal hyperprior distribution for $\mu$. Run the new hierarchical model, and obtain the posterior summaries for all 7 parameters. Verify that the posterior draws of \texttt{mu} and \texttt{mu\_j[1]} through \texttt{mu\_j[4]} are all non-negative. Include the 2-by-2 traceplot + cdf + historgram + ACF plot for \texttt{mu\_j[1]} (Hint: use the \texttt{plot(posterior, vars = "mu\_j[1]"} command). Comment on the MCMC diagnostics for \texttt{mu\_j[1]}. 
+
+
+
+#### \textcolor{Bittersweet}{Grade for Exercise 2: /6} 
+#### \textcolor{Bittersweet}{Comments: }
+
+
+## \textcolor{RoyalBlue}{Your choice of distribution for the hyperprior for $\mu$ and priors for $\mu_j$'s}
+
+
+#### \textcolor{RoyalBlue}{Exercise 3:} Give appropriate prior distribution for $\mu_j$'s and hyperprior distribution for $\mu$ of your own choosing. Run the new hierarchical model, and obtain the posterior summaries for all 7 parameters. Verify that the posterior draws of \texttt{mu} and \texttt{mu\_j[1]} through \texttt{mu\_j[4]} are all non-negative. Include the 2-by-2 traceplot + cdf + historgram + ACF plot for \texttt{mu\_j[1]} (Hint: use the \texttt{plot(posterior, vars = "mu\_j[1]"} command). Comment on the MCMC diagnostics for \texttt{mu\_j[1]}. 
+
+
+#### \textcolor{Bittersweet}{Grade for Exercise 3: /6} 
+#### \textcolor{Bittersweet}{Comments: }
+
