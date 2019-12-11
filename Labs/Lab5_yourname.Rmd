@@ -1,0 +1,123 @@
+---
+output:
+  pdf_document: default
+header-includes:
+  - \usepackage{color}
+  - \usepackage[dvipsnames]{xcolor}
+---
+----
+ Fall 2019: MATH 347 Bayesian Statistics
+---
+
+```{r}
+
+```
+## \textcolor{RoyalBlue}{{Lab 5: Conditional means priors in Bayesian linear regression}}
+#### Author:_____(Insert your name here) _____
+
+#### \textcolor{Bittersweet}{Total Grade for Lab 5: /15} 
+#### \textcolor{Bittersweet}{Comments (optional)} 
+
+## \textcolor{RoyalBlue}{Template for lab report}
+\textbf{Instructions:} This is the template you will use to type up your responses to the exercises. To produce a document that you can print out and turn in just click on Knit PDF above. All you need to do to complete the lab is to type up your BRIEF answers and the R code (when necessary) in the spaces provided below. 
+
+It is strongly recommended that you knit your document regularly (minimally after answering each exercise) for two reasons. 
+
+  1. Ensure that there are no errors in your code that would prevent the document from knitting.
+  2. View the instructions and your answers in a more legible, attractive format.
+
+
+```{r, eval=FALSE}
+# Any text BOTH preceded by a hashtag AND within the ```{r} ``` code chunk is a comment. 
+# R indicates a comment by turning the text green in the editor, and brown in the knitted
+# document. 
+# Comments are not treated as a command to be interpreted by the computer.
+# They normally (briefly!) describe the purpose of your command or chunk in plain English.
+# However, for this class, they will have a different goal, as the text above and below 
+# each chunk should sufficiently describe the chunk's contents.
+# For this class, comments will be used to indicate where your code should go, or to give
+# hints for what the code should look like.
+```
+
+This lab explores the conditional means priors for the regression coefficients in Bayesian linear regression.
+
+## \textcolor{RoyalBlue}{The conditional means priors in the CE example}
+\begin{itemize}
+\item The linear relationship:
+\begin{eqnarray}
+\mu_i=\beta_0+\beta_1x_i.
+\end{eqnarray}
+\begin{itemize}
+    \item Easier to formulate prior opinion about the mean values, $\mu_i$
+    \item For predictor value $x_1$, one can construct a Normal prior for the mean value $\mu_1$:
+    \begin{eqnarray}
+    \mu_1 \sim \textrm{Normal}(m_1,s_1)
+    \end{eqnarray}
+    \noindent e.g. if $x_1=10$, the mean $\mu_1=\beta_0+\beta_1(1)\sim \textrm{Normal}(8,2)$
+    \item Similarly, for predictor value $x_2$, one can construct a Normal prior for the mean value of $\mu_2$:
+    \begin{eqnarray}
+    \mu_2 \sim \textrm{Normal}(m_2,s_2)
+    \end{eqnarray}
+    \noindent e.g. if $x_2=12$, the mean $\mu_2=\beta_0+\beta_1(12)\sim \textrm{Normal}(11,2)$
+\end{itemize}
+\item Assuming independence:
+\begin{eqnarray}
+\pi(\mu_1,\mu_2)=\pi(\mu_1)\pi(\mu_2)
+\end{eqnarray}
+\item One can then solve $\beta_0$ and $\beta_1$ in $\mu_i=\beta_0+\beta_1x_i$ given $\mu_1,\mu_2,x_1,x_2$:
+\begin{eqnarray}
+\beta_1=\frac{\mu_2-\mu_1}{x_2-x_1},
+\end{eqnarray}
+\begin{eqnarray}
+\beta_0=\mu_1-x_1\Big(\frac{\mu_2-\mu_1}{x_2-x_1}\Big).
+\end{eqnarray}
+\item Currently, we have $x_1=10,x_2=12$, and
+\begin{eqnarray}
+\mu_1=\beta_0+\beta_1(10)\sim \textrm{Normal}(8,2),
+\end{eqnarray}
+\begin{eqnarray}
+\mu_2=\beta_0+\beta_1(12)\sim \textrm{Normal}(11,2).
+\end{eqnarray}
+\end{itemize}
+
+## \textcolor{RoyalBlue}{Specifying a conditional means prior in JAGS}
+The \texttt{modelString} sample script for specifying a conditional means prior is given below.
+
+```{r,eval=FALSE}
+## write the model
+modelString <-"
+model {
+## sampling
+for (i in 1:N){
+y[i] ~ dnorm(beta0 + beta1*x[i], invsigma2)
+}
+## priors
+beta1 <- (mu2 - mu1)/(x2 - x1)
+beta0 <- mu1 - x1*(mu2 - mu1)/(x2 - x1)
+mu1 ~ dnorm(m1, g1)
+mu2 ~ dnorm(m2, g2)
+invsigma2 ~ dgamma(a, b)
+sigma <- sqrt(pow(invsigma2, -1))
+}
+"
+```
+
+#### \textcolor{RoyalBlue}{Exercise 1:} Provide the hyperparameter values in Equation $(7)$ and Equation $(8)$ in terms of \texttt{the\_data} for the conditional means prior. You can simply write down R script when specifying the list of \texttt{the\_data} as your answer.
+
+#### \textcolor{Bittersweet}{Grade for Exercise 1: /3} 
+#### \textcolor{Bittersweet}{Comments: }
+
+#### \textcolor{RoyalBlue}{Exercise 2:} Run the complete JAGS script and perform MCMC diagnostics.
+
+#### \textcolor{Bittersweet}{Grade for Exercise 2: /4} 
+#### \textcolor{Bittersweet}{Comments: }
+
+#### \textcolor{RoyalBlue}{Exercise 3:} Interpret $\beta_0$ and $\beta_1$ in the context of the CE example.
+
+#### \textcolor{Bittersweet}{Grade for Exercise 3: /4} 
+#### \textcolor{Bittersweet}{Comments: }
+
+#### \textcolor{RoyalBlue}{Exercise 4:} Use the posterior samples of $(\beta_0,\beta_1,\sigma)$ and produce predicted values of future responses at $x=1,5,7,9$ and make a plot. What can you say about predicted log(Expenditure) for a CU of $\$5$ log(Income)? (Hint: check out lecture slides page $39-41$.)
+
+#### \textcolor{Bittersweet}{Grade for Exercise 4: /4} 
+#### \textcolor{Bittersweet}{Comments: }
