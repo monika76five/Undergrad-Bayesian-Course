@@ -1,0 +1,208 @@
+\documentclass[11pt]{article}
+\usepackage[top=2.1cm,bottom=2cm,left=2cm,right= 2cm]{geometry}
+%\geometry{landscape}                % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{changepage}
+\usepackage{lscape}
+\usepackage{ulem}
+\usepackage{multicol}
+\usepackage{dashrule}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usetikzlibrary{matrix}
+\usepackage{xcolor}
+\usepackage{listings}
+\newenvironment{rcases}
+  {\left.\begin{aligned}}
+  {\end{aligned}\right\rbrace}
+
+\newcommand{\urlwofont}[1]{\urlstyle{same}\url{#1}}
+\newcommand{\degree}{\ensuremath{^\circ}}
+\newcommand{\hl}[1]{\textbf{\underline{#1}}}
+
+
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\newenvironment{choices}{
+\begin{enumerate}[(a)]
+}{\end{enumerate}}
+
+%\newcommand{\soln}[1]{\textcolor{MidnightBlue}{\textit{#1}}}	% delete #1 to get rid of solutions for handouts
+\newcommand{\soln}[1]{ \vspace{1.35cm} }
+
+%\newcommand{\solnMult}[1]{\textbf{\textcolor{MidnightBlue}{\textit{#1}}}}	% uncomment for solutions
+\newcommand{\solnMult}[1]{ #1 }	% uncomment for handouts
+
+%\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{black}{(#1)}}} }	% uncomment for handouts
+\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{blue}{(#1)}}} }	% uncomment for handouts
+
+\newcommand{\note}[1]{ \textbf{\textcolor{red}{[#1]}} }	% uncomment for handouts
+
+\begin{document}
+
+
+\enlargethispage{\baselineskip}
+
+Fall 2019, MATH 347 \hfill Jingchen (Monika) Hu\\
+
+\begin{center}
+{\huge Case Study 2 take 2: True-or-False Exam Scores}	
+\end{center}
+\vspace{0.5cm}
+
+
+\section{The data} 
+
+Suppose a group of 15 people sit an exam made up of 40 true-or-false questions, and each receives a score afterwards. Dataset ``TrueFalseScores.csv" on Moodle.
+
+\section{Latent class model approach} 
+
+Suppose the true/false exam has $m$ questions and  $y_i$ denotes the score of observation $i$,  $i = 1, \cdots, n$.  Assume there are two latent classes and each observation belongs to one of the two latent classes.   Let $z_i$ be the class assignment for observation $i$ and $\pi$ be the probability of being assigned to class 1.
+Given the latent class assignment $z_i$ for observation $i$, the score $Y_i$ follows a Binomial distribution with $m$ trials and a class-specific success probability.  Since there are only two possible class assignments, all observations assigned to class 1 share the same correct success parameter $p_1$ and all observations assigned to class 0 share the same success rate parameter $p_0$. 
+The specification of the data model is expressed as follows:
+\begin{eqnarray}
+Y_i = y_i \mid z_i, p_{z_i} &\sim& \textrm{Binomial}(m, p_{z_i}), \\
+\label{eq:Bern2} z_i \mid \pi &\sim& \textrm{Bernoulli}(\pi). 
+\end{eqnarray}
+
+
+In this latent class model there are many unknown parameters.  One does not know the class assignment probability $\pi$, the class assignments $z_1, ..., z_n$, and the probabilities $p_1$ and $p_0$ for the two Binomial distributions.  Some possible choices for prior distributions are provided below for inspiration.
+
+\begin{itemize}
+\item[(a)] The parameters $\pi$ and $(1 - \pi)$ are the latent class assignment probabilities for the two classes.  If additional information is available which indicates, for example,  that 1/3 of the observations belonging to class 1, then $\pi$ is considered as  fixed and set to the value of 1/3. 
+If no such information is available, one can consider $\pi$ as unknown and assign this parameter a prior distribution. A natural choice for prior on a success probability is a Beta prior\index{Beta!prior} distribution
+with shape parameters\index{shape parameter} $a$ and $b$.
+
+\item[(b)] The parameters $p_1$ and $p_0$ are the success rates in the Binomial model in the two classes. If one believes that  the test takers in class 1 are simply random guessers, then one fixes $p_1$ to the value of 0.5. Similarly, if one believes that test takers in class 0 have a higher success rate of 0.9, then one sets $p_0$ to the value 0.9. However, if one is uncertain about the values of $p_1$ and $p_0$, one  lets either or both success rates be random and assigned prior distributions.
+
+\end{itemize}
+
+
+\newpage
+
+The tree diagram\index{tree diagram} below illustrates the latent class model.
+
+\tikzstyle{level 1}=[level distance=3.5cm, sibling distance=3.5cm]
+\tikzstyle{level 2}=[level distance=3.5cm, sibling distance=2cm]
+
+
+\tikzstyle{bag} = [text width=6em, text centered]
+\tikzstyle{end} = [circle, minimum width=3pt,fill, inner sep=0pt]
+
+\begin{tikzpicture}[grow=right, sloped]
+\node[bag] {$\pi \sim g(\pi)$}
+    child {
+        node[bag] {$z_n \sim \textrm{Bern}(\pi)$ }        
+            child {
+                node[end, label=right:
+                    {$y_n \sim \textrm{Bin}(40, p_0)$}] {}
+                edge from parent
+                node[above] {$z_n = 0$}
+                node[below]  {$$}
+            }
+            child {
+                node[end, label=right:
+                    {$y_n \sim \textrm{Bin}(40, p_1)$}] {}
+                edge from parent
+                node[above] {$z_n = 1$}
+                node[below]  {$$}
+            }
+            edge from parent 
+            node[above] {$$}
+            node[below]  {$$}
+    }
+    child {
+        node[bag] { $\vdots$ \\ $z_i \sim \textrm{Bern}(\pi)$ \\ $\vdots$  }         
+            child {
+                node[end, label=right:
+                    {$y_i \sim \textrm{Bin}(40, p_0)$}] {}
+                edge from parent
+                node[above] {$z_i = 0$}
+                node[below]  {$$}
+            }
+            child {
+                node[end, label=right:
+                    {$y_i \sim \textrm{Bin}(40, p_1)$}] {}
+                edge from parent
+                node[above] {$z_i = 1$}
+                node[below]  {$$}
+            }
+            edge from parent 
+            node[above] {$$}
+            node[below]  {$$}
+    }
+    child {
+        node[bag] {$z_1 \sim \textrm{Bern}(\pi)$ }        
+            child {
+                node[end, label=right:
+                    {$y_1 \sim \textrm{Bin}(40, p_0)$}] {}
+                edge from parent
+                node[above] {$z_1 = 0$}
+                node[below]  {$$}
+            }
+            child {
+                node[end, label=right:
+                    {$y_1 \sim \textrm{Bin}(40, p_1)$}] {}
+                edge from parent
+                node[above] {$z_1 = 1$}
+                node[below]  {$$}
+            }
+            edge from parent 
+            node[above] {$$}
+            node[below]  {$$}
+    };
+\end{tikzpicture}
+
+
+\section{Sample JAGS script} 
+
+Sample JAGS script is provided below. This is the case where $\pi = 1/3$.
+
+One introduces a new variable \texttt{theta[i]} that indicates the correct rate value for observation \texttt{i}.
+In the sampling section of the JAGS script, the first block is a loop over all observations, where one first determines the  rate \texttt{theta[i]} based on the classification value \texttt{z[i]}. The \texttt{equals} command evaluates equality, for example, \texttt{equals(z[i], 0)} returns 1 if \texttt{z[i]} equals to \texttt{0}, and returns 0 otherwise.   This indicates that the rate \texttt{theta[i]} will either be equal to \texttt{p1} or \texttt{p0} depending on the value \texttt{z[i]}.
+
+One should note in JAGS, the classification variable \texttt{z[i]} takes values of 0 and 1, corresponding to the knowledgeable and guessing classes, respectively.  As $\pi$ is considered fixed and set to 1/3,  the variable \texttt{z[i]} is assigned a Bernoulli distribution with probability 1/3.  To conclude the script, in the prior section the guessing rate parameter \texttt{p1} is assigned the value 0.5 and the rate parameter \texttt{p0} is assigned a Beta(1, 1) distribution truncated to the interval (0.5, 1) using \texttt{T(0.5, 1)}.
+
+\begin{verbatim}
+modelString<-"
+model {
+## sampling
+for (i in 1:N){
+   theta[i] <- equals(z[i], 1) * p1 + equals(z[i], 0) * p0
+y[i] ~ dbin(theta[i], m)
+}
+for (i in 1:N){
+   z[i] ~ dbern(1/3)
+}
+## priors
+p1 <- 0.5
+p0 ~ dbeta(1,1) T(0.5, 1)
+}
+"
+\end{verbatim}
+
+\section{Important things to note} 
+
+
+\begin{itemize}
+\item Make sure to consider how many parameters are in the model, and what they are.
+
+\item For every parameter, make sure to give a prior distribution, and possibly hyperprior distributions for any hyperparameters you use.
+
+\item For any parameter of your interest, make sure to monitor it in the JAGS script so you can track them and summarize them in the posterior.
+
+\item Posterior summaries of assignments of $z_i$ can tell us across your MCMC chain, how often is person $i$ being classified in the random guessing group, and how often they are being classified in the knowledgeable group.
+\end{itemize}
+
+
+\end{document} 
