@@ -1,0 +1,703 @@
+---
+title: Bayesian hierarchical modeling
+author: Jingchen (Monika) Hu 
+institute: Vassar College
+date: MATH 347 Bayesian Statistics
+output:
+  beamer_presentation:
+    includes:
+      in_header: ../LectureStyle.tex
+slide_level: 2
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(gridExtra)
+require(ProbBayes)
+require(tidyverse)
+require(runjags)
+crcblue <- "#2905a1"
+knitr::opts_chunk$set(echo = TRUE)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+## Outline
+
+\tableofcontents[hideallsubsections]
+
+# Example: Korean Drama Ratings
+
+## Korean Drama Ratings
+
+- K-drama popularity in Asia and other parts of the world, "Hallyu" = "Korean wave".
+
+- K-dramas streaming in the US: Hulu, DramaFever, and Netflix.
+
+\pause 
+
+- How are K-dramas being rated in Korea?
+
+- There are three main producers/companies, and each drama is broadcasted in one of four different times of the week.
+
+- The drama ratings are collected from the AGB Nielsen Media Research Group (the national AGB TV ratings).
+
+- In one study (a previous student's course project), ratings of 101 K-dramas were collected from 2014 to 2016. 
+
+
+## Korean Drama Ratings cont'd
+
+Let's focus on $n = 33$ KBS dramas (KBS is one of the 3 producers, ``Korea Broadcasting System"): 
+\begin{table}[htb]
+\begin{center}
+{\small{
+\begin{tabular}{lrrr} \hline
+Drama Title & Schedule & Rating & Date \\ \hline
+All About My Mom & 4  & 0.2750 & 8/15/15 \\
+Assembly & 2 & 0.0531 & 7/15/15 \\
+Blood & 1 & 0.0474 &  2/16/15 \\
+Cheer up! & 1 & 0.0341 & 10/5/15 \\
+Descendants of the Sun & 2 & 0.2858 & 2/24/16 \\
+Discovery of Love & 1 & 0.0703 & 8/18/14 \\
+Five Enough & 4 & 0.2720 & 2/2/16 \\
+Golden Cross & 2 & 0.0800 & 4/9/14 \\ 
+Gunman in Joseon & 2 & 0.1070 & 6/25/14 \\  \hline
+\end{tabular}
+\caption{\label{table:KdramaData} The drama title, the broadcasting schedule, the rating, and the broadcasting date of 9 KBS dramas. The labeling of schedule is: 1 = Mondays and Tuesdays, 2 = Wednesdays and Thursdays, 3 = Fridays, and 4 = Saturdays and Sundays.}
+}}
+\end{center}
+\label{default}
+\end{table}
+
+
+## Ratings by Schedule
+
+```{r message = FALSE, size = "footnotesize"}
+dramadata = read.csv("KDramaData.csv", header=T)
+
+KBSdrama = dramadata[dramadata$Producer==2,]
+KBSdrama$Schedule = as.factor(KBSdrama$Schedule)
+```
+
+
+## Ratings by Schedule cont'd
+
+```{r fig.height = 3, fig.width = 3, fig.align = "center", size = "footnotesize", echo = FALSE}
+ggplot(KBSdrama, aes(Rating, color = Schedule)) +
+  geom_density() + labs(title = "Density plot of ratings") + 
+  xlim(0, 0.3) + theme_grey(base_size = 10, base_family = "") 
+```
+
+
+## Ratings by Schedule cont'd
+
+```{r eval = FALSE, size = "footnotesize"}
+table(KBSdrama$Schedule)
+tapply(KBSdrama$Rating, KBSdrama$Schedule, summary)
+tapply(KBSdrama$Rating, KBSdrama$Schedule, sd)
+```
+
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|c|} \hline
+Schedule & Min & Mean & Max & sd &sample size  \\ \hline
+1 (M\&Tu) & 0.0331 & 0.0740 & 0.1829 & 0.0426 & 13 \\
+2 (W\&Th) & 0.0483 & 0.0998 & 0.2858 & 0.0661 & 11  \\
+3 (F) & 0.0312 & 0.0384 & 0.0500 & 0.0101 & 3 \\  
+4 (Sa\&Su) & 0.112 & 0.195 & 0.275 & 0.0757 & 6 \\ \hline
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}
+
+- It seems to make sense to develop 4 schedule-specific Normal models, and label data as $Y_{ij}$.
+
+
+# Observations in groups: approaches to modeling
+
+## Observations in Groups
+
+- Observations can arise in groups. Examples:
+    - Students' test scores from multiple schools
+    - Ratings of movies of different genres
+    - Ratings of dramas of different schedules
+    
+- A random variable can be labeled as
+\begin{equation}
+Y_{ij},
+\end{equation}
+where $j$ is a group index, and $i$ is the observation index within group $j$, and $i = 1, \cdots, n_j$.
+
+```{r fig.height = 1.5, fig.width = 1.5, fig.align = "center", size = "footnotesize", echo = FALSE}
+ggplot(KBSdrama, aes(Rating, color = Schedule)) +
+  geom_density() + labs(title = "Density plot of ratings") + 
+  xlim(0, 0.3) + theme_grey(base_size = 5, base_family = "") 
+```
+
+
+## Ratings by Schedule
+
+- Outcome is continuous, use a Normal model.
+
+- Approach \#1: separate estimates, for $i = 1, \cdots, n_j$ and $j = 1, \cdots, J$
+
+\begin{eqnarray}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, \sigma_j)
+\end{eqnarray}
+
+- Approach \#2: combined estimates, for $i = 1, \cdots, n_j$ and $j = 1, \cdots, J$
+
+\begin{eqnarray}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma)
+\end{eqnarray}
+
+- Comments on pros and cons of each approach?
+\pause
+    - Approach \#1: no connection between groups; groups with small sample size might suffer (extreme case: $n_j = 1$).
+    - Approach \#2: differences between groups are ignored.
+    
+\pause
+
+- Something in between? Hierarchical modeling!
+
+
+# A two-stage prior in a hierarchical model
+
+## Review of Normal Model Inference
+
+- Both parameters $\mu$ and $\sigma$ are unknown.
+
+- The sampling density:
+
+\begin{eqnarray}
+Y_1, \cdots, Y_n \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma)
+\end{eqnarray}
+
+\pause
+
+- The prior distributions $\pi(\mu, \sigma) = \pi_1(\mu) \pi_2(\sigma)$ take the form:
+
+\begin{eqnarray}
+\mu \sim \textrm{Normal}(\mu_0, \sigma_0), \,\,\, 1/\sigma^2 \sim \textrm{Gamma}(\alpha, \beta).
+\end{eqnarray}
+
+\pause
+
+- Bayes' rule will produce two \textcolor{red}{conditional posterior distributions}:
+\small
+\begin{eqnarray}
+\mu \mid y_1, \cdots, y_n,{\color{red}\phi} &\sim& \textrm{Normal}\left(\frac{\phi_0 \mu_0 + n\bar{y} \phi}{\phi_0 + n \phi}, \sqrt{\frac{1}{\phi_0 + n \phi}}\right), \\  \nonumber \\
+1/\sigma^2 = \phi \mid y_1, \cdots, y_n,{\color{red}\mu} &\sim& \textrm{Gamma} \left(\alpha + \frac{n}{2}, \beta + \frac{1}{2}\sum_{i=1}^{n}(y_i - \mu)^2 \right). \nonumber \\
+\end{eqnarray}
+
+
+## Group-specific Normal models
+
+- A group-specific Normal model for group $j$:
+
+\begin{eqnarray}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, \sigma_j),
+\end{eqnarray}
+
+where $i = 1, \cdots, n_j$ and $n_j$ is the number of observations in group $j$.
+
+\pause
+
+- For separate estimates:
+    1. Put a Normal prior for $\mu_j$ and a Gamma prior for $\sigma_j$ (independent priors).
+    2. Use Gibbs sampler to generate posterior samples of $\mu_j$ and $\sigma_j$ (your own Gibbs sampler or JAGS).
+    3. Perform MCMC diagnostics.
+    4. Summarize the results.
+    
+- How can we link $\mu_j$'s and $\sigma_j$'s in some way, if we believe they are related?
+
+
+## Group-specific Normal Models with Shared $\sigma$
+
+- Without loss of generality, assume a group-specific Normal model for group $j$:
+
+\begin{eqnarray}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, {\color{red}\sigma}),
+\end{eqnarray}
+
+where $i = 1, \cdots, n_j$ and $n_j$ is the number of observations in group $j$. \textcolor{red}{A commonly shared $\sigma$.} Reasonable?
+
+\pause
+
+\vspace{3mm}
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|c|} \hline
+Schedule & Min & Mean & Max & sd &sample size  \\ \hline
+1 (M\&Tu) & 0.0331 & 0.0740 & 0.1829 & 0.0426 & 13 \\
+2 (W\&Th) & 0.0483 & 0.0998 & 0.2858 & 0.0661 & 11  \\
+3 (F) & 0.0312 & 0.0384 & 0.0500 & 0.0101 & 3 \\  
+4 (Sa\&Su) & 0.112 & 0.195 & 0.275 & 0.0757 & 6 \\ \hline
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}
+
+\pause 
+
+Probably not... Schedule specific $\mu_j$ and $\sigma_j$ as an exercise.
+
+
+## Group-specific Normal Models with Shared $\sigma$ cont'd
+
+- Without loss of generality, assume a group-specific Normal model for group $j$:
+\begin{eqnarray}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, {\color{red}\sigma}),
+\end{eqnarray}
+
+where $i = 1, \cdots, n_j$ and $n_j$ is the number of observations in group $j$. \textcolor{red}{A commonly shared $\sigma$.} 
+
+- Specify a shared Normal prior distribution for $\mu_j$ (conjugacy):
+
+\begin{eqnarray}
+\mu_j \sim \textrm{Normal}(\mu, \tau).
+\end{eqnarray}
+
+- What does this prior mean?
+\pause
+    1. Assume all $\mu_j$'s come from the same prior distribution, therefore they are related, and they are not the same.
+    2. $\mu$ is the mean (controls the location), and $\tau$ is the standard deviation (controls the spread; large $\tau$ means large variability among the $\mu_j$'s).
+    3. $\mu$ and $\tau$ are called hyperparameters, i.e. parameters of distributions of parameters.
+    
+    
+## The Hierarchical Normal Model
+
+-  The sampling density for group $j$, and $j = 1, \cdots, J$:
+\begin{eqnarray}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, {\color{red}\sigma}),
+\end{eqnarray}
+where $i = 1, \cdots, n_j$ and $n_j$ is the number of observations in group $j$. 
+
+- The stage 1 prior distribution for $\mu_j$:
+
+\begin{eqnarray}
+\mu_j \sim \textrm{Normal}(\mu, \tau).
+\end{eqnarray}
+
+- The stage 2 prior distribution for $\mu_j$:
+
+\begin{eqnarray}
+\mu, \tau \sim \textrm{g}(\mu, \tau).
+\end{eqnarray}
+
+\pause
+
+- The prior distribution for $\sigma$:
+
+\begin{eqnarray}
+1/\sigma^2 \sim \textrm{Gamma}(\alpha_{\sigma}, \beta_{\sigma}).
+\end{eqnarray}
+
+
+## Graphical Representation of the Hierarchical Model
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.5]{figures/graphical}
+%\caption{}
+\end{center}
+\end{figure}
+
+- Arrows pointing 
+    1. from parameters to random variable
+    2. from hyperparameters to parameters
+    
+    
+## Prior and Hyperprior Specifications
+
+- The stage 1 prior distribution for $\mu_j$:
+
+\begin{eqnarray}
+\mu_j \sim \textrm{Normal}(\mu, \tau).
+\end{eqnarray}
+
+- The stage 2 prior distribution for $\mu_j$:
+
+\begin{eqnarray}
+\mu, \tau \sim \textrm{g}(\mu, \tau).
+\end{eqnarray}
+
+- Hyperpriors:
+\pause
+\begin{eqnarray}
+\mu \mid \mu_0, \gamma_0 &\sim& \textrm{Normal}(\mu_0, \gamma_0),\\
+1/\tau^2 \mid \alpha_{\tau}, \beta_{\tau} &\sim& \textrm{Gamma}(\alpha_{\tau}, \beta_{\tau}).
+\end{eqnarray}
+
+\pause
+
+- The prior distribution for $\sigma$:
+
+\begin{eqnarray}
+1/\sigma^2 \sim \textrm{Gamma}(\alpha_{\sigma}, \beta_{\sigma}).
+\end{eqnarray}
+
+
+# MCMC simulation by JAGS
+
+## Recap: Prior and Hyperprior Specifications
+
+- The stage 1 prior distribution for $\mu_j$:
+
+\begin{eqnarray}
+\mu_j \sim \textrm{Normal}(\mu, \tau).
+\end{eqnarray}
+
+- The stage 2 prior distribution for $\mu_j$:
+
+\begin{eqnarray}
+\mu, \tau \sim \textrm{g}(\mu, \tau).
+\end{eqnarray}
+
+- Hyperpriors:
+\begin{eqnarray}
+\mu \mid \mu_0, \gamma_0 &\sim& \textrm{Normal}(0.1, 0.5),\\
+1/\tau^2 \mid \alpha_{\tau}, \beta_{\tau} &\sim& \textrm{Gamma}(1, 1).
+\end{eqnarray}
+
+- The prior distribution for $\sigma$:
+
+\begin{eqnarray}
+1/\sigma^2 \sim \textrm{Gamma}(1, 1).
+\end{eqnarray}
+
+## JAGS Script for the Hierarchical Model
+
+```{r message = FALSE, size = "footnotesize"}
+modelString <-"
+model {
+## likelihood
+for (i in 1:N){
+y[i] ~ dnorm(mu_j[schedule[i]], invsigma2)
+}
+
+## priors
+for (j in 1:J){
+mu_j[j] ~ dnorm(mu, invtau2)
+}
+invsigma2 ~ dgamma(a_g, b_g)
+sigma <- sqrt(pow(invsigma2, -1))
+
+## hyperpriors
+mu ~ dnorm(mu0, 1/g0^2)
+invtau2 ~ dgamma(a_t, b_t)
+tau <- sqrt(pow(invtau2, -1))
+}
+"
+```
+
+## JAGS Script for the Hierarchical Model cont'd
+
+- Notes about the \texttt{modelString}
+    1. Need a vector of \texttt{mu\_j}, of length \texttt{J}.
+    2. Need a vector of \texttt{schedule}, of length \texttt{N}.
+    3. \texttt{dnorm} takes mean and \textcolor{red}{precision}.
+    4. Work with \texttt{invsigma2}, can return \texttt{sigma}.
+    5. Work with \texttt{invtau2}, can return \texttt{tau}.
+
+
+## JAGS Script for the Hierarchical Model cont'd
+
+- Pass the data and hyperparameter values to JAGS:
+
+```{r message = FALSE, size = "footnotesize"}
+y = KBSdrama$Rating   
+schedule = KBSdrama$Schedule  
+N = length(y)  
+J = length(unique(schedule)) 
+
+initsfunction <- function(chain){
+  .RNG.seed <- c(1,2)[chain]
+  .RNG.name <- c("base::Super-Duper",
+                 "base::Wichmann-Hill")[chain]
+  return(list(.RNG.seed=.RNG.seed,
+              .RNG.name=.RNG.name))
+}
+
+the_data <- list("y" = y, "schedule" = schedule, "N" = N, "J" = J, 
+                 "mu0" = 0.1, "g0" = 0.5, 
+                 "a_t" = 1, "b_t" = 1,
+                 "a_g" = 1, "b_g" = 1)
+```
+
+
+## JAGS Script for the Hierarchical Model cont'd
+
+- Run the JAGS code for this model:
+
+```{r message = FALSE, size = "footnotesize", warning = FALSE, results = 'hide'}
+posterior <- run.jags(modelString,
+                      n.chains = 1,
+                      data = the_data,
+                      monitor = c("mu", "tau", "mu_j", "sigma"),
+                      adapt = 1000,
+                      burnin = 5000,
+                      sample = 5000,
+                      thin = 1, 
+                      inits = initsfunction)
+```
+
+## JAGS Output of the Hierarchical Model
+
+- Obtain posterior summaries of all parameters:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+summary(posterior) 
+```
+
+
+## JAGS Output of the Hierarchical Model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior, vars = "mu_j[1]")
+```
+
+## JAGS Output of the Hierarchical Model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior, vars = "tau")
+```
+
+## Shrinkage/Pooling Effects
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+Ind_Stats = as.data.frame(matrix(NA, J, 2))
+names(Ind_Stats) = c("mean", "sd")
+for (j in 1:J){
+  Ind_Stats[j, ] = c(mean(KBSdrama$Rating[KBSdrama$Schedule == j]), 
+                     sd(KBSdrama$Rating[KBSdrama$Schedule == j]))
+}
+
+Post_Means <- summary(posterior)[, 4]
+
+Means1 <- data.frame(Type = "Sample", Mean = Ind_Stats$mean)
+Means2 <- data.frame(Type = "Hierarchical", Mean =
+                       Post_Means[3:(4 + J - 2)])
+
+Means1$Title <- c("Schedule 1", "Schedule 2", "Schedule 3",
+                  "Schedule 4")
+Means2$Title <- c("Schedule 1", "Schedule 2", "Schedule 3",
+                  "Schedule 4")
+```
+
+## Shrinkage/Pooling Effects cont'd
+
+```{r fig.height = 2.3, fig.width = 2.8, fig.align = "center", size = "footnotesize", message = FALSE}
+ggplot(rbind(Means1, Means2), aes(Type, Mean, group=Title)) +
+  geom_line(color = crcblue) + geom_point() +
+  annotate(geom = "text", x = 0.75,
+           y = Means1$Mean + c(0.01, 0.01, 0.01, -0.01), 
+           size = 3, label = Means1$Title) + increasefont(Size = 10)
+```
+
+## Shrinkage/Pooling Effects cont'd
+
+An example of movie ratings:
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.4]{figures/MovieLensPoolingb}
+\end{center}
+\end{figure}
+
+
+## Sources of Variability
+
+- Two sources of variability in $Y_{ij}$:
+
+\begin{eqnarray}
+Y_{ij} &\overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, \sigma) \,\,\, \text{[within-group variability]}\\
+\mu_j \mid \mu, \tau &\sim \textrm{Normal}(\mu, \tau) \,\,\, \text{[between-group variability]} 
+\end{eqnarray} 
+
+\pause
+
+- To compare these two sources of variability, one can compute the fraction
+
+\begin{eqnarray}
+R = \frac{\tau^2}{\tau^2 + \sigma^2},
+\end{eqnarray}
+
+from the posterior draws of $\tau$ and $\sigma$.
+
+\pause
+
+- The closer the value of $R$ to 1, the higher the between-group variability.
+
+## Compute and Graph Sources of Variability
+
+- We need the \texttt{coda} R package
+
+```{r eval = FALSE, size = "scriptsize"}
+install.packages("coda")
+```
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+require(coda)
+tau_draws <- as.mcmc(posterior, vars = "tau")
+sigma_draws <- as.mcmc(posterior, vars = "sigma")
+R <- tau_draws^2/(tau_draws^2 + sigma_draws^2)
+
+df <- as.data.frame(R)
+
+quantile(R, c(0.025, 0.975))
+```
+
+## Compute and Graph Sources of Variability cont'd 
+
+```{r fig.height = 2.5, fig.width = 2.5, fig.align = "center", size = "footnotesize", message = FALSE}
+ggplot(df, aes(x=R)) + geom_density() +
+  labs(title="Density of R") +
+  theme(plot.title = element_text(size=15)) +
+  theme(axis.title = element_text(size=15))
+```
+
+
+# Exercise: Hierarchical model with schedule-specific $\mu_j$ and $\sigma_j$
+
+## A More Flexible Hierarchical Model
+
+- A group-specific Normal model for group $j$:
+
+\begin{equation}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, \sigma_j),
+\end{equation}
+
+where $i = 1, \cdots, n_j$ and $n_j$ is the number of observations in group $j$.
+
+\pause
+
+- This is probably a more suitable hierarchical model for the K-drama ratings dataset.
+
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|c|} \hline
+Schedule & Min & Mean & Max & sd &sample size  \\ \hline
+1 (M\&Tu) & 0.0331 & 0.0740 & 0.1829 & 0.0426 & 13 \\
+2 (W\&Th) & 0.0483 & 0.0998 & 0.2858 & 0.0661 & 11  \\
+3 (F) & 0.0312 & 0.0384 & 0.0500 & 0.0101 & 3 \\  
+4 (Sa\&Su) & 0.112 & 0.195 & 0.275 & 0.0757 & 6 \\ \hline
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}
+
+
+## A More Flexible Hierarchical Model cont'd
+
+- A group-specific Normal model for group $j$:
+
+\begin{equation}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, \sigma_j),
+\end{equation}
+
+where $i = 1, \cdots, n_j$ and $n_j$ is the number of observations in group $j$.
+
+- Specify a shared Normal prior distribution for $\mu_j$ (conjugacy):
+
+\begin{equation}
+\mu_j \sim \textrm{Normal}(\mu, \tau).
+\end{equation}
+
+-  In addition, specify a shared Gamma prior distribution for $\sigma_j$ (conjugacy):
+\vspace{10mm}
+
+\pause
+
+- What do these two prior mean?
+
+
+## A More Flexible Hierarchical Model cont'd
+
+- Previously we have a graphical representation of the hierarchical model (group-specific $\mu_j$ and shared $\sigma$):
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.43]{figures/graphical}
+\end{center}
+\end{figure}
+
+- Arrows pointing 
+    1. from parameters to random variable
+    2. from hyperparameters to parameters
+    
+
+## A More Flexible Hierarchical Model cont'd
+
+The complete specification model specification:
+
+- The sampling density for group $j$, and $j = 1, \cdots, J$:
+
+\begin{equation}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, \sigma_j).
+\end{equation}
+
+- The two-stage prior distribution for $\mu_j$:
+\vspace{20mm}
+
+- The two-stage prior distribution for $\sigma_j$:
+
+
+## A More Flexible Hierarchical Model cont'd
+
+Create JAGS script for this more flexible hierarchical model. Previously...
+
+```{r eval = FALSE, size = "footnotesize"}
+modelString <-"
+model {
+## likelihood
+for (i in 1:N){
+y[i] ~ dnorm(mu_j[schedule[i]], invsigma2)
+}
+## priors
+for (j in 1:J){
+mu_j[j] ~ dnorm(mu, invtau2)
+}
+invsigma2 ~ dgamma(a_g, b_g)
+sigma <- sqrt(pow(invsigma2, -1))
+## hyperpriors
+mu ~ dnorm(mu0, 1/g0^2)
+invtau2 ~ dgamma(a_t, b_t)
+tau <- sqrt(pow(invtau2, -1))
+}
+"
+```
+
+
+# Recap
+
+## Recap
+
+- Bayesian inference procedure:
+    - Step 1: express an opinion about the location of unknown parameter(s) before sampling (prior).
+    - Step 2: take the sample (data/likelihood).
+    - Step 3: use Bayes' rule to sharpen and update the previous opinion about unknown parameter(s) given the information from the sample (posterior).
+
+\pause
+
+-  For continuous outcome in groups, consider a hierarchical Normal model.
+
+- A two-stage prior for $\mu$. Also possible to do a two-stage prior for $\sigma$.
+
+\pause
+
+- Use JAGS for MCMC and make sure to perform MCMC diagnostics.
+
+\pause
+
+- Additional topics:
+    1. Shrinkage/pooling effects.
+    2. Sources of variability.
