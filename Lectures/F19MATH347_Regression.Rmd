@@ -1,0 +1,1334 @@
+---
+title: Bayesian linear regression
+author: Jingchen (Monika) Hu 
+institute: Vassar College
+date: MATH 347 Bayesian Statistics
+output:
+  beamer_presentation:
+    includes:
+      in_header: ../LectureStyle.tex
+slide_level: 2
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(gridExtra)
+require(ProbBayes)
+require(tidyverse)
+require(runjags)
+require(coda)
+crcblue <- "#2905a1"
+knitr::opts_chunk$set(echo = TRUE)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+## Outline
+
+\tableofcontents[hideallsubsections]
+
+# Introduction: Adding a continuous predictor variable
+
+## Review: the Normal model
+
+- When you have continuous outcomes, you can use a Normal model:
+\begin{equation}
+Y_i \mid \mu, \sigma \overset{i.i.d.}{\sim} \textrm{Normal}(\mu, \sigma), \,\,\, i = 1, \cdots, n.
+\end{equation}
+
+- This model assumes each observation follows the same Normal density with mean $\mu$ and standard deviation $\sigma$.
+
+- Suppose now you have another continuous variable available, $x_i$. And you want to use the information in $x_i$ to learn about $Y_i$.
+    1. $Y_i$ is the log of expenditure of CU's
+    2. $x_i$ is the log of total income of CU's
+    
+- Is the model in Equation (1) flexible to include $x_i$?
+
+
+## An observation specific mean
+
+- We can adjust the model in Equation (1) to Equation (2), where the common mean $\mu$ is replaced by an observation specific mean $\mu_i$:
+\begin{equation}
+Y_i \mid \mu_i, \sigma \overset{ind}{\sim} \textrm{Normal}(\mu_i, \sigma), \,\,\, i = 1, \cdots, n.
+\end{equation}
+
+- How to link $\mu_i$ and $x_i$?
+
+
+## Linear relationship between the mean and the predictor
+
+- One basic approach: use a linear relationship:
+\begin{equation}
+\mu_i = \beta_0 + \beta_1 x_i, \,\,\, i = 1, \cdots, n.
+\end{equation}
+
+- $x_i$'s are known constants.
+
+- $\beta_0$ and $\beta_1$ are unknown parameters.
+
+- Interpretation:
+    1. the linear function $\beta_0 + \beta_1 x_i$ is the \textcolor{red}{expected outcome} with $x_i$
+    2. $\beta_0$ is the **intercept**: then \textcolor{red}{expected outcome} when $x_i = 0$
+    3. $\beta_1$ is the **slope**: the increase in the \textcolor{red}{expected outcome} when $x_i$ increases by 1 unit
+    
+\pause
+
+- Bayesian approach: 
+\pause
+    1. assign a prior distribution to $(\beta_0, \beta_1, \sigma)$
+    2. perform inference
+    3. summarize posterior distribution of these parameters
+    
+
+## The simple linear regression model
+
+- To put everything together, a linear regression model:
+\begin{equation}
+Y_i \mid x_i, \beta_0, \beta_1, \sigma \overset{ind}{\sim} \textrm{Normal}(\beta_0 + \beta_1 x_i, \sigma), \,\,\, i = 1, \cdots, n.
+\end{equation}
+
+- Alternatively:
+\begin{eqnarray}
+Y_i &=& \mu_i + \epsilon_i,  \\
+\mu_i &=& \beta_0 + \beta_1 x_i, \\
+\epsilon_i &\overset{i.i.d.}{\sim}& \textrm{Normal}(0, \sigma)\,\,\, i = 1, \cdots, n.
+\end{eqnarray}
+
+- What assumptions does this model make?
+
+
+## The simple linear regression model
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.25]{figures/Regression_View}
+\caption{Display of linear regression model. The line represents the unknown regression line $\beta_0 + \beta_1 x$ and the normal curves represent the distribution of the response $Y$ about the line.}
+\end{center}
+\end{figure}
+
+
+## The simple linear regression model cont'd
+
+```{r fig.height = 2, fig.width = 2, fig.align = "center", size = "footnotesize"}
+CEData <- read.csv("CEsample.csv", header = T, sep = ",")
+g1 <- ggplot(CEData, aes(x = log_TotalIncome, y = log_TotalExp)) +
+  geom_point(size=1) + 
+  labs(x = "log(Income)", y = "log(Expenditure)") +
+  theme_grey(base_size = 10, base_family = "") 
+g1
+```
+
+
+# The CE sample
+
+## The CE sample
+
+The CE sample comes from the 2017 Q1 CE PUMD: 4 variables, 994 observations.
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{ll} 
+\hline
+Variable & Description  \\ \hline
+log(Expenditure) & Continuous; CU's total expenditures in last \\
+& quarter (log)\\
+log(Income) & Continuous; the amount of CU income before taxes in \\
+& past 12 months (log)\\
+Rural & Binary; the urban/rural status of CU: 0 = Urban, \\
+& 1 = Rural\\ 
+Race & Categorical; the race category of the reference person: \\
+& 1 = White, 2 = Black, 3 = Native American, \\
+& 4 = Asian, 5 = Pacific Islander, 6 = Multi-race \\ \hline 
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}
+
+
+# A simple linear regression for the CE sample
+
+## A SLR for the CE sample
+
+- For now, we focus on a simple linear regression:
+\begin{eqnarray}
+Y_i \mid \mu_i, \sigma &\overset{ind}{\sim}& \textrm{Normal}(\mu_i, \sigma), \\
+\mu_i &=& \beta_0 + \beta_1 x_i.
+\end{eqnarray}
+
+\small{
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{ll} 
+\hline
+Variable & Description  \\ \hline
+log(Expenditure) & Continuous; CU's total expenditures in last \\
+& quarter (log)\\
+log(Income) & Continuous; the amount of CU income before\\
+&  taxes in past 12 months (log)\\ \hline
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}
+}
+
+- Remarks:
+    1. $Y_i$ is log(Expenditure), and $x_i$ is log(Income).
+    2. The intercept $\beta_0$: the \textcolor{red}{expected} log(Expenditure) $\mu_i$ for a CU $i$ that has zero log(Income) (i.e. $x_i = 0$).
+    3. The slope $\beta_1$: the change in the \textcolor{red}{expected} log(Expenditure) $\mu_i$ when the log(Income) of CU $i$ increases by 1 unit.'
+    
+    
+## A weakly informative prior
+
+- Sometimes one has limited prior information about the regression parameters $\beta_0$ and $\beta_1$ and/or the standard deviation $\sigma$.
+
+- Assuming independence:
+\begin{equation}
+\pi(\beta_0, \beta_1, \sigma) = \pi(\beta_0, \beta_1) \pi(\sigma).
+\end{equation}
+\pause
+    1. Assuming independence between $\beta_0$ and $\beta_1$:
+    \begin{eqnarray}
+    \pi(\beta_0, \beta_1) &=& \pi(\beta_0)\pi(\beta_1), \\
+    \beta_0 &\sim& \textrm{Normal}(\mu_0, s_0),\\
+    \beta_1 &\sim& \textrm{Normal}(\mu_1, s_1).
+    \end{eqnarray}
+    e.g. $\textrm{Normal}(0, 100)$.
+    \pause
+    2. Assigning a weakly informative prior for the standard deviation $\sigma$:
+    \begin{equation}
+    1/\sigma^2 \sim \textrm{Gamma}(a, b).
+    \end{equation}
+    e.g. $\textrm{Gamma}(1, 1)$.
+    
+
+## Full conditional derivation?
+
+- The sampling model:
+\begin{equation}
+Y_i \mid x_i, \beta_0, \beta_1, \sigma \overset{ind}{\sim} \textrm{Normal}(\beta_0 + \beta_1 x_i, \sigma). 
+\end{equation}
+
+- The joint likelihood:
+\begin{eqnarray}
+L(\beta_0, \beta_1, \sigma) &= & \prod_{i=1}^n \left[\frac{1}{\sqrt{2 \pi \sigma^2}}
+\exp\left\{-\frac{(y_i - \beta_0 - \beta_1 x_i)^2}{2\sigma^2}\right\}\right]
+ \nonumber \\
+& \propto & (1/\sigma^2)^{n/2} \exp\left\{-\frac{1/\sigma^2}{2}\sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_i)^2\right\} \nonumber 
+\end{eqnarray}
+
+
+## Full conditional derivation? cont'd
+
+- The joint posterior:
+\begin{eqnarray}
+\pi(\beta_0, \beta_1, 1/\sigma^2 | y) &\propto & (1/\sigma^2)^{n/2} \exp\left\{-\frac{1/\sigma^2}{2}\sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_i)^2\right\} \nonumber \\
+ & \times & \exp\left\{-\frac{1}{2 s_0^2}(\beta_0 - \mu_0)^2\right\} 
+ \exp\left\{-\frac{1}{2 s_1^2}(\beta_1 - \mu_1)^2\right\} \nonumber \\ 
+& \times & (1/\sigma^2)^{a-1} \exp(-b (1/\sigma^2)) \nonumber
+\end{eqnarray}
+
+- While it is possible to further simplify and recognize full conditional posterior distribution, we will rely on JAGS to perform the MCMC for us.
+
+
+# MCMC simulation by JAGS for the SLR model
+
+## JAGS script for the SLR model
+
+```{r message = FALSE, size = "footnotesize"}
+modelString <-"
+model {
+## sampling
+for (i in 1:N){
+y[i] ~ dnorm(beta0 + beta1*x[i], invsigma2)
+}
+
+## priors
+beta0 ~ dnorm(mu0, g0)
+beta1 ~ dnorm(mu1, g1)
+invsigma2 ~ dgamma(a, b)
+sigma <- sqrt(pow(invsigma2, -1))
+}
+"
+```
+
+
+## JAGS script for the SLR model cont'd
+
+- Pass the data and hyperparameter values to JAGS:
+
+```{r message = FALSE, size = "footnotesize"}
+y <- as.vector(CEData$log_TotalExp)
+x <- as.vector(CEData$log_TotalIncome)
+N <- length(y)
+the_data <- list("y" = y, "x" = x, "N" = N,
+                 "mu0" = 0, "g0" = 0.0001,
+                 "mu1" = 0, "g1" = 0.0001,
+                 "a" = 1, "b" = 1)
+
+initsfunction <- function(chain){
+  .RNG.seed <- c(1,2)[chain]
+  .RNG.name <- c("base::Super-Duper",
+                 "base::Wichmann-Hill")[chain]
+  return(list(.RNG.seed=.RNG.seed,
+              .RNG.name=.RNG.name))
+}
+```
+
+
+## JAGS script for the SLR model cont'd
+
+- Run the JAGS code for this model:
+
+```{r message = FALSE, size = "footnotesize", warning = FALSE, results = 'hide'}
+posterior <- run.jags(modelString,
+                      n.chains = 1,
+                      data = the_data,
+                      monitor = c("beta0", "beta1", "sigma"),
+                      adapt = 1000,
+                      burnin = 5000,
+                      sample = 5000,
+                      thin = 1,
+                      inits = initsfunction)
+```
+
+
+## JAGS output for the SLR model
+
+- Obtain posterior summaries of all parameters:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+summary(posterior) 
+```
+
+
+## JAGS output for the SLR model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior, vars = "beta0")
+```
+
+
+## JAGS output for the SLR model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior, vars = "beta1")
+```
+
+
+## JAGS output for the SLR model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior, vars = "sigma")
+```
+
+
+## New JAGS script for the SLR model
+
+Setting \texttt{thin = 50}, to get rid of the stickiness in $\beta_0$ and $\beta_1$.
+
+```{r message = FALSE, size = "footnotesize", warning = FALSE, results = 'hide'}
+posterior_new <- run.jags(modelString,
+                      n.chains = 1,
+                      data = the_data,
+                      monitor = c("beta0", "beta1", "sigma"),
+                      adapt = 1000,
+                      burnin = 5000,
+                      sample = 5000,
+                      thin = 50,
+                      inits = initsfunction)
+```
+
+
+## New JAGS output for the SLR model
+
+- Obtain posterior summaries of all parameters:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+summary(posterior_new) 
+```
+
+## New JAGS output for the SLR model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior_new, vars = "beta0")
+```
+
+
+## New JAGS output for the SLR model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior_new, vars = "beta1")
+```
+
+
+## New JAGS output for the SLR model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior_new, vars = "sigma")
+```
+
+## Interpretation of regression coefficients
+
+- The intercept $\beta_0$: 
+
+For a CU with log(Income) of \$0 (i.e. Income of \$1),  the expected log(Expenditure) is \$4.327 (the median), and it falls in the interval (\$3.926, \$4.753) with 90\% posterior probability.
+
+\pause
+
+- The slope $\beta_1$:
+
+With every \$1 increase in the log(Income) of a CU, its log(Expenditure) increases by \$0.421 (the median). In addition, this increase in the log(Expenditure) falls in the interval (\$0.381, \$0.459) with 90\% posterior probability.
+
+
+# Bayesian inferences with SLR
+
+## Simulate fits from the regression model
+
+- The SLR model assumes
+\begin{equation}
+E(Y) = \beta_0 + \beta_1 x.
+\end{equation}
+
+- Each pair of values $(\beta_0, \beta_1)$ corresponds to a line $\beta_0 + \beta_1 x$ in the space of values of $x$ and $y$.
+
+\pause
+
+- Using posterior mean $\tilde{\beta_0}$ and $\tilde{\beta_1}$, one can find a ``best" line of fit through the data
+\begin{equation}
+y = \tilde{\beta_0} + \tilde{\beta_1} x.
+\end{equation}
+
+\pause
+
+- What about the uncertainty of the line estimate?
+
+
+## Simulate fits from the regression model cont'd
+
+- To learn about the uncertainty of the line estimate, one can draw a sample of $J$ rows from the matrix of posterior draws of $(\beta_0, \beta_1)$ and collect the line estimates
+
+\begin{equation}
+\tilde{\beta_0}^{(j)} + \tilde{\beta_1}^{(j)}x, \,\,\, j = 1, \cdots, J.
+\end{equation}
+
+\vspace{5mm}
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+post <- as.mcmc(posterior_new)
+post_means <- apply(post, 2, mean)
+post <- as.data.frame(post)
+```
+
+## Simulate fits from the regression model cont'd
+
+```{r fig.height = 2, fig.width = 2.5, fig.align = "center", size = "footnotesize", message = FALSE}
+ggplot(CEData, aes(log_TotalIncome, log_TotalExp)) +
+  geom_point(size=1) +
+  geom_abline(data=post[1:10, ],
+              aes(intercept=beta0, slope=beta1), alpha = 0.5) +
+  geom_abline(intercept = post_means[1],
+              slope = post_means[2], size = 1) +
+  ylab("log(Expenditure)") + xlab("log(Income)") +
+  theme_grey(base_size = 10, base_family = "")
+```
+
+
+## Learning about the expected response
+
+- What if one wants to learn about the expected log expenditure of a CU for a specific log income value?
+
+- One could obtain a simulated sample from the posterior of $\beta_0 + \beta_1 x$ by computing $E(Y) = \beta_0 + \beta_1 x$ on each of the simulated pairs from the posterior of $(\beta_0, \beta_1)$.
+
+\vspace{5mm}
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+post <- as.data.frame(post)
+one_expected <- function(x){
+  lp <- post[ , "beta0"] +  x * post[ , "beta1"]
+  data.frame(Value = paste("log(Income) =", x),
+             Expected_logExp = lp)
+}
+
+df <- map_df(c(1, 5, 7, 9), one_expected)
+```
+
+## Learning about the expected response cont'd
+
+```{r fig.height = 2.5, fig.width = 2.5, fig.align = "center", size = "footnotesize", message = FALSE}
+require(ggridges)
+ggplot(df, aes(x = Expected_logExp, y = Value)) +
+  geom_density_ridges() +
+  theme_grey(base_size = 8, base_family = "")
+```
+
+
+## Learning about the expected response cont'd
+
+```{r fig.height = 2.5, fig.width = 2.5, fig.align = "center", size = "footnotesize", message = FALSE, warning = FALSE}
+df <- map_df(c(10, 11, 12, 13), one_expected)
+ggplot(df, aes(x = Expected_logExp, y = Value)) +
+  geom_density_ridges() +
+  theme_grey(base_size = 8, base_family = "")
+```
+
+## Learning about the expected response cont'd
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+df %>% group_by(Value) %>%
+  summarize(P05 = quantile(Expected_logExp, 0.05),
+            P50 = median(Expected_logExp),
+            P95 = quantile(Expected_logExp, 0.95))
+```
+
+e.g. for a CU of log(Income) of \$5, the posterior median of the expected log(Expenditure) is \$6.43, and the probability that the expected log(Expenditure) falls between \$6.25 and \$6.62 is 90\%.
+
+
+## Prediction of future responses
+
+- To predict future log(Expenditure) for a CU given its log(Income):
+
+\begin{equation}
+Y_i \mid x_i, \beta_0, \beta_1, \sigma \overset{ind}{\sim} \textrm{Normal}(\beta_0 + \beta_1 x_i, \sigma).
+\end{equation}
+
+- variability in $\beta_0$ and $\beta_1$ in the expected value $\beta_0 + \beta_1 x$
+- variability in the sampling model in Equation (19)
+    
+\pause
+
+- For a large number of $S$:
+\small{
+\begin{eqnarray*}
+\text{simulate}\,\, E[y]^{(1)} = \beta_0^{(1)} + \beta_1^{(1)} x &\rightarrow& \text{sample}\,\, \tilde{y}^{(1)} \sim {\rm{Normal}}(E[y]^{(1)}, \sigma^{(1)})\\
+\text{simulate}\,\, E[y]^{(2)} = \beta_0^{(2)} + \beta_1^{(2)} x &\rightarrow& \text{sample}\,\, \tilde{y}^{(2)} \sim {\rm{Normal}}(E[y]^{(2)}, \sigma^{(2)})\\
+&\vdots& \\
+\text{simulate}\,\, E[y]^{(S)} = \beta_0^{(S)} + \beta_1^{(S)} x &\rightarrow& \text{sample}\,\, \tilde{y}^{(S)} \sim {\rm{Normal}}(E[y]^{(S)}, \sigma^{(S)})\\
+\end{eqnarray*}
+}
+
+
+## Prediction of future responses cont'd
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+one_predicted <- function(x){
+  lp <- post[ , "beta0"] +  x * post[ , "beta1"]
+  y <- rnorm(5000, lp, post[, "sigma"])
+  data.frame(Value = paste("Size =", x),
+             Predicted_logExp = y)
+}
+df <- map_df(c(1, 5, 7, 9), one_predicted)
+```
+
+## Prediction of future responses cont'd
+
+```{r fig.height = 2.5, fig.width = 2.5, fig.align = "center", size = "footnotesize", message = FALSE}
+require(ggridges)
+ggplot(df, aes(x = Predicted_logExp, y = Value)) +
+  geom_density_ridges() +
+  theme_grey(base_size = 9, base_family = "")
+```
+
+
+## Prediction of future responses cont'd
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+df %>% group_by(Value) %>%
+  summarize(P05 = quantile(Predicted_logExp, 0.05),
+            P50 = median(Predicted_logExp),
+            P95 = quantile(Predicted_logExp, 0.95))
+```
+
+
+\small
+- Recall that for a CU of log(Income) of \$5, the probability that the expected log(Expenditure) falls between \$6.25 and \$6.62 is 90\%.
+
+- A 90\% prediction interval for the log(Expenditure) is (\$5.24, \$7.61), which is wider than the posterior interval estimate for the expected log(Expenditure).
+
+- The predictive distribution incorporates the sizable uncertainty in the log(Expenditure) given the log(Income) represented by the sampling standard deviation $\sigma$. 
+
+
+
+# More on priors
+
+## Subjective prior: standardization
+
+- To put different variables on similar scales.
+
+\begin{equation}
+y_i^* = \frac{y_i - \bar{y}}{s_y}, x_i^* = \frac{x_i - \bar{x}}{s_x}
+\end{equation}
+
+- Use the \texttt{scale} command to standardize.
+
+\vspace{3mm}
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+CEData$log_TotalExpSTD <- scale(CEData$log_TotalExp)
+CEData$log_TotalIncomeSTD <- scale(CEData$log_TotalIncome)
+```
+
+## Subjective prior: standardization cont'd
+
+```{r fig.height = 2, fig.width = 4, fig.align = "center", size = "footnotesize", message = FALSE}
+g2 = ggplot(CEData, aes(x = log_TotalIncomeSTD, y = log_TotalExpSTD)) +
+  geom_point(size=1) + 
+  xlab("log(Income) STD") + ylab("log(Expenditure) STD") +
+  theme_grey(base_size = 10, base_family = "") 
+grid.arrange(g1, g2, ncol=2)
+```
+
+## Subjective prior: SLR model after standardization
+
+- A standardized value represents the number of standard deviations that the value falls above or below the mean.
+
+- What does $x_i^* = -2$ mean? What does $y_i^* = 1$ mean?
+
+\pause
+
+- The SLR model after standardization:
+\begin{eqnarray}
+Y_i^* \mid \mu_i^*, \sigma &\overset{ind}{\sim}& \textrm{Normal}(\mu_i^*, \sigma), \\
+\mu_i^* &=& \beta_0 + \beta_1 x_i^*.
+\end{eqnarray}
+\vspace{1mm}
+\small
+    1. $Y_i^*$ is standardized log(Expenditure), and $x_i^*$ is standardized log(Income).
+    2. The intercept $\beta_0$: the \textcolor{red}{expected} standardized log(Expenditure) $\mu_i^*$ for a CU $i$ that has the \textcolor{red}{average} log(Income) (i.e. $x_i^* = 0$).
+    3. The slope $\beta_1$: the change in the \textcolor{red}{expected} standardized log(Expenditure) $\mu_i^*$ when the standardized log(Income) $x_i^*$ of CU $i$ increases by 1 unit, or when the log(Income) variable increases by one standard deviation.
+    4. The slope $\beta_1$ equals to the correlation between $x_i^*$ and $y_i^*$: positive $\beta_1$ vs negative $\beta_1$, absolute value indicates the strength.
+
+
+## Subjective prior: a subjective prior
+
+- Assuming independence:
+
+\begin{equation}
+\pi(\beta_0, \beta_1, \sigma) = \pi(\beta_0)\pi(\beta_1) \pi(\sigma).
+\end{equation}
+
+\pause
+
+- Prior on the intercept $\beta_0$: 
+    1. If one believes a CU of average log(Income) will also have an average log(Expenditure).
+\begin{equation}
+\beta_0 \sim \textrm{Normal}(0, s_0).
+\end{equation}
+    2. The standard deviation $s_0$ reflects how confident the person believes in the guess of $\beta_0 = 0$. e.g. $\textrm{Normal}(0, 1)$.
+    
+\pause
+
+- Prior on the slope $\beta_1$:
+    1. The slope $\beta_1$ represents the correlation between the predictor and the response.
+\begin{equation}
+\beta_1 \sim \textrm{Normal}(\mu_1, s_1).
+\end{equation}
+    2. $\mu_1$ represents one's best guess of the correlation, and $s_1$ represents the sureness of this guess. e.g. $\textrm{Normal}(0.7, 0.15)$.
+
+
+## Subjective prior: a subjective prior cont'd
+
+- Assuming independence:
+
+\begin{equation}
+\pi(\beta_0, \beta_1, \sigma) = \pi(\beta_0)\pi(\beta_1) \pi(\sigma).
+\end{equation}
+
+\pause
+
+- Prior on the standard deviation $\sigma$: weakly informative
+
+\begin{equation}
+1/\sigma^2 \sim \textrm{Gamma}(1, 1).
+\end{equation}
+
+\pause
+
+- The informative/subjective prior for $(\beta_0, \beta_1, \sigma)$ is defined as
+
+\begin{eqnarray}
+\pi(\beta_0, \beta_1, \sigma) &=& \pi(\beta_0)\pi(\beta_1) \pi(\sigma),\\
+\beta_0 &\sim& \textrm{Normal}(0, 1), \\
+\beta_1 &\sim& \textrm{Normal}(0.7, 0.15), \\
+1/\sigma^2 &\sim& \textrm{Gamma}(1, 1).
+\end{eqnarray}
+
+
+## Subjective prior: JAGS script for the standardized SLR model
+
+```{r message = FALSE, size = "footnotesize"}
+modelString <-"
+model {
+## sampling
+for (i in 1:N){
+y[i] ~ dnorm(beta0 + beta1*x[i], invsigma2)
+}
+
+## priors
+beta0 ~ dnorm(mu0, g0)
+beta1 ~ dnorm(mu1, g1)
+invsigma2 ~ dgamma(a, b)
+sigma <- sqrt(pow(invsigma2, -1))
+}
+"
+```
+
+## Subjective prior: JAGS script for the standardized SLR model cont'd
+
+- Pass the data and hyperparameter values to JAGS:
+
+```{r message = FALSE, size = "footnotesize"}
+y <- as.vector(CEData$log_TotalExpSTD)
+x <- as.vector(CEData$log_TotalIncomeSTD)
+N <- length(y)
+the_data <- list("y" = y, "x" = x, "N" = N,
+                 "mu0" = 0, "g0" = 1,
+                 "mu1" = 0.7, "g1" = 44.4,
+                 "a" = 1, "b" = 1)
+
+initsfunction <- function(chain){
+  .RNG.seed <- c(1,2)[chain]
+  .RNG.name <- c("base::Super-Duper",
+                 "base::Wichmann-Hill")[chain]
+  return(list(.RNG.seed=.RNG.seed,
+              .RNG.name=.RNG.name))
+}
+```
+
+
+## JAGS script for the SLR model cont'd
+
+- Run the JAGS code for this model:
+
+```{r message = FALSE, size = "footnotesize", warning = FALSE, results = 'hide'}
+posterior_sub <- run.jags(modelString,
+                      n.chains = 1,
+                      data = the_data,
+                      monitor = c("beta0", "beta1", "sigma"),
+                      adapt = 1000,
+                      burnin = 5000,
+                      sample = 5000,
+                      thin = 1,
+                      inits = initsfunction)
+```
+
+
+## Subjective prior: JAGS output for the SLR model
+
+- Obtain posterior summaries of all parameters:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+summary(posterior_sub) 
+```
+
+
+## Subjective prior: JAGS output for the SLR model con'td
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior_sub, vars = "beta1")
+```
+
+## Conditional means prior: a conditional means prior
+
+- We have seen two methods for constructing a prior on the regression coefficient parameters:
+    1. Weakly informative/vague prior on a model on the original data
+    2. Subjective/informative prior on a model on standardized data
+    
+\pause
+
+- A third approach:
+    1. On a model on the original data
+    2. Stating prior beliefs about the expected response value conditional on specific values of the predictor variable
+    
+\pause
+
+- Assuming independence:
+
+\begin{equation}
+\pi(\beta_0, \beta_1, \sigma) = \pi(\beta_0, \beta_1)\pi(\sigma).
+\end{equation}
+
+- The linear relationship:
+
+\begin{equation}
+\mu_i = \beta_0 + \beta_1 x_i.
+\end{equation}
+
+
+## Conditional means prior: a conditional means prior cont'd
+
+- The linear relationship:
+\begin{equation}
+\mu_i = \beta_0 + \beta_1 x_i.
+\end{equation}
+
+- Easier to formulate prior opinion about the mean values, $\mu_i$
+
+- For predictor value $x_1$, on can construct a Normal prior for the mean value $\mu_1$:
+\begin{equation}
+\mu_1 \sim \textrm{Normal}(m_1, s_1)
+\end{equation}
+e.g. if $x_1 = 10$, the mean $\mu_1 = \beta_0 + \beta_1(10) \sim \textrm{Normal}(8, 2)$
+
+\pause
+
+- Similarly, for predictor value $x_2$, on can construct a Normal prior for the mean value $\mu_2$:
+\begin{equation}
+\mu_2 \sim \textrm{Normal}(m_2, s_2)
+\end{equation}
+e.g. if $x_2 = 15$, the mean $\mu_2 = \beta_0 + \beta_1(12) \sim \textrm{Normal}(11, 2)$
+
+
+## Conditional means prior: a conditional means prior cont'd
+
+- Assuming independence:
+
+\begin{equation}
+\pi(\mu_1, \mu_2) = \pi(\mu_1) \pi(\mu_2)
+\end{equation}
+
+- One can then solve $\beta_0$ and $\beta_1$ in $\mu_i = \beta_0 + \beta_1 x_i$ given $\mu_1, \mu_2, x_1, x_2$:
+
+\begin{eqnarray}
+\beta_1 &=& \frac{\mu_2 - \mu_1}{x_2 - x_1}, \\
+\beta_0 &=& \mu_1 - x_1\left(\frac{\mu_2 - \mu_1}{x_2 - x_1}\right).
+\end{eqnarray}
+
+\pause
+
+- Currently, we have $x_1 = 10, x_2 = 12$, and
+
+\begin{eqnarray}
+\mu_1 &=& \beta_0 + \beta_1(10) \sim \textrm{Normal}(8, 2), \\
+\mu_2 &=& \beta_0 + \beta_1(12) \sim \textrm{Normal}(11, 2).
+\end{eqnarray}
+
+
+## Conditional means prior: JAGS script
+
+```{r message = FALSE, size = "footnotesize"}
+modelString <-"
+model {
+## sampling
+for (i in 1:N){
+y[i] ~ dnorm(beta0 + beta1*x[i], invsigma2)
+}
+
+## priors
+beta1 <- (mu2 - mu1)/(x2 - x1)
+beta0 <- mu1 - x1*(mu2 - mu1)/(x2 - x1)
+mu1 ~ dnorm(m1, g1)
+mu2 ~ dnorm(m2, g2)
+invsigma2 ~ dgamma(a, b)
+sigma <- sqrt(pow(invsigma2, -1))
+}
+"
+```
+
+# A multiple linear regression, and MCMC simulation by JAGS
+
+## The CE sample
+
+The CE sample comes from the 2017 Q1 CE PUMD. \\
+4 variables, 994 observations.
+\small{
+\begin{table}[htb]
+%\caption{\label{table:CEvariables} The variable description for the CE sample.}
+\begin{center}
+\begin{tabular}{ll} 
+\hline
+Variable & Description  \\ \hline
+log(Expenditure) & Continuous; CU's total expenditures in last \\
+& quarter (log)\\
+log(Income) & Continuous; the amount of CU income before taxes in \\
+& past 12 months (log)\\
+Rural & Binary; the urban/rural status of CU: 0 = Urban, \\
+& 1 = Rural\\ 
+Race & Categorical; the race category of the reference person: \\
+& 1 = White, 2 = Black, 3 = Native American, \\
+& 4 = Asian, 5 = Pacific Islander, 6 = Multi-race \\ \hline 
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}%
+}
+
+How can we include additional information about the urban/rural status and race category to predict a CU's log(Expenditure)?
+
+
+## A multiple linear regression model
+
+- Similar to SLR, MLR assumes an observation specific mean $\mu_i$ for $Y_i$:
+\begin{equation}
+Y_i \mid \mu_i, \sigma \overset{ind}{\sim} \textrm{Normal}(\mu_i, \sigma), \,\,\, i = 1, \cdots, n.
+\end{equation}
+
+\pause
+
+- In addition, MLR assumes the mean of $Y_i$ is a linear function of \textcolor{red}{all} predictors:
+\begin{equation}
+\mu_i = \beta_0 + \beta_1 x_{i,1} + \beta_2 x_{i,2} + \cdots + \beta_r x_{i,r}.
+\end{equation}
+    - $\mathbf{x}_i = (x_{i,1}, x_{i,2}, \cdots, x_{i,r})$ is a vector of \textcolor{red}{known} predictors for observation $i$
+    - $\beta = (\beta_0, \beta_1, \cdots, \beta_r)$ is a vector of \textcolor{red}{unknown} regression coefficient parameters (shared among all observations)
+
+
+## Regression coefficient interpretation
+
+\begin{equation}
+\mu_i = \beta_0 + \beta_1 x_{i,1} + \beta_2 x_{i,2} + \cdots + \beta_r x_{i,r}.
+\end{equation}
+
+- When all $r$ predictors are continuous, 
+    - What does $\beta_0$ mean?
+    -  What does each $\beta_j, j = 1, \cdots, r$ mean?
+    
+\pause
+
+-  In the CE example, the predictors are not all continuous.
+
+\small{
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{ll} 
+\hline
+Variable & Description  \\ \hline
+log(Income) & \textcolor{red}{Continuous}; the amount of CU income before taxes in \\
+& past 12 months (log)\\
+Rural & \textcolor{red}{Binary}; the urban/rural status of CU: 0 = Urban, \\
+& 1 = Rural\\ 
+Race & \textcolor{red}{Categorical}; the race category of the reference person: \\
+& 1 = White, 2 = Black, 3 = Native American, \\
+& 4 = Asian, 5 = Pacific Islander, 6 = Multi-race \\ \hline 
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}
+}
+
+
+## Adding a binary predictor
+
+\small{
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{ll} 
+\hline
+Variable & Description  \\ \hline
+log(Expenditure) & Continuous; CU's total expenditures in last \\
+& quarter (log)\\
+Rural & \textcolor{red}{Binary}; the urban/rural status of CU: 0 = Urban, \\
+& 1 = Rural\\ \hline 
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}
+}
+
+- While it is possible to consider Rural as a continuous variable: change by one unit from urban to rural...
+
+- It is much more common to consider it as a binary categorical variable to classify two groups:
+    - The urban group
+    - The rural group
+    
+- Such classification puts an emphasis on the \textcolor{red}{difference of the expected outcomes} between the two groups.
+
+
+## With only one binary predictor
+
+- For simplicity, consider a simplified regression model with a single predictor: the binary indicator for rural area $x_i$.
+
+\begin{equation}
+\mu_i = \beta_0 + \beta_1 x_i  = 
+ \begin{cases}
+  \beta_0, & \text{ the urban group}; \\
+  \beta_0 + \beta_1, & \text{ the rural group}.  \\
+  \end{cases}
+\end{equation}
+
+- The expected outcome $\mu_i$ for CUs in the urban group: $\beta_0$.
+- The expected outcome $\mu_i$ for CUs in the rural group: $\beta_0 + \beta_1$.
+- $\beta_1$ represents the \textcolor{red}{change in the expected outcome} $\mu_i$ from the urban group to the rural group.
+
+
+## Adding a multi-category categorical predictor
+
+
+\small{
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{ll} 
+\hline
+Variable & Description  \\ \hline
+log(Expenditure) & Continuous; CU's total expenditures in last \\
+& quarter (log)\\
+Race & {\color{red}Categorical}; the race category of the reference person: \\
+& 1 = White, 2 = Black, 3 = Native American, \\
+& 4 = Asian, 5 = Pacific Islander, 6 = Multi-race \\ \hline 
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}
+}
+
+- It is common to consider it as a categorical variable to classify multiple groups:
+    - How many groups? What are the groups?
+    
+- Such classification puts an emphasis on the \textcolor{red}{difference of the expected outcomes} between one group to \textcolor{red}{the reference group}.
+
+
+
+## With only one categorical predictor
+
+- For simplicity, consider a simplified regression model with a single predictor: the race category of the reference person $x_i$.
+
+\begin{eqnarray}
+\mu_i &=& \beta_0 + \beta_1 x_{i,1} + \beta_2 x_{i,2} + \beta_3 x_{i,3} + \beta_4 x_{i,4}  + \beta_5 x_{i,5} \nonumber \\
+&=& 
+ \begin{cases}
+  \beta_0, & \text{ White}; \\
+  \beta_0 + \beta_1, & \text{ Black};  \\
+  \beta_0 + \beta_2, & \text{ Native American};  \\
+  \beta_0 + \beta_3, & \text{ Asian};  \\
+  \beta_0 + \beta_4, & \text{ Pacific Islander};  \\
+  \beta_0 + \beta_5, & \text{ Multi-race}.  \\
+  \end{cases}
+\end{eqnarray}
+
+- What is the expected outcome $\mu_i$ for CUs in the White group?
+
+- What is the expected outcome $\mu_i$ for CUs in the Asian group?
+
+- What does $\beta_5$ represent?
+
+
+## Consider all predictors
+
+- The linear combination of the log(income), rural indicator, and race category:
+
+\begin{eqnarray}
+\mu_i^* = \beta_0 &+& \beta_1 x_{i, income}^* + \beta_2 x_{i, rural} + \beta_3 x_{i, race_B}  \nonumber \\ 
+   &+&  \beta_4 x_{i, race_N} + \beta_5 x_{i, race_A}+ \beta_6 x_{i, race_P} + \beta_7 x_{i, race_M}. \nonumber \\
+\end{eqnarray}
+
+- The MLR is written as
+\begin{eqnarray}
+Y_i^* \mid \beta_0, \beta_1, \cdots, \beta_7, \sigma, \mathbf{x}_i^* \overset{ind}{\sim} \textrm{Normal}(\beta_0 &+& \beta_1 x_{i, income} + \beta_2 x_{i, rural} \nonumber \\
+&+& \beta_3 x_{i, race_B} +  \beta_4 x_{i, race_N} \nonumber \\
+&+& \beta_5 x_{i, race_A} + \beta_6 x_{i, race_P} \nonumber \\
+&+& \beta_7 x_{i, race_M}, \sigma). \nonumber \\
+\end{eqnarray}
+
+Note: $^*$ indicates standardized values.
+
+
+## Consider all predictors cont'd
+
+\begin{eqnarray}
+\mu_i^* = \beta_0 &+& \beta_1 x_{i, income}^* + \beta_2 x_{i, rural} + \beta_3 x_{i, race_B}  \nonumber \\ 
+   &+&  \beta_4 x_{i, race_N} + \beta_5 x_{i, race_A}+ \beta_6 x_{i, race_P} + \beta_7 x_{i, race_M}. \nonumber \\
+\end{eqnarray}
+
+- What does intercept $\beta_0$ mean?
+
+- What does regression coefficient $\beta_1$ mean?
+
+- What about the expected outcome of a CU with Native American reference person, living in rural area with standardized log(income) = 1?
+
+
+## A weakly informative prior
+
+- With more than one predictors, the subjective prior and the conditional means prior are more difficult to specify. Why?
+
+- Let's try giving a weakly informative prior.
+
+\pause
+
+- Assuming independence:
+\begin{equation}
+\pi(\beta_0, \beta_1, \cdots, \beta_7, \sigma) = \pi(\beta_0, \beta_1, \cdots, \beta_7) \pi(\sigma).
+\end{equation}
+    - Assuming independence among $\beta_j$'s:
+\begin{eqnarray}
+\pi(\beta_0, \beta_1, \cdots, \beta_7) &=& \prod_{j=0}^7 \pi(\beta_j), \\
+\beta_j &\sim& \textrm{Normal}(\mu_j, s_j).
+\end{eqnarray}
+e.g. $\textrm{Normal}(0, 1)$.
+    -  Assigning a weakly informative prior for the standard deviation $\sigma$:
+\begin{equation}
+1/\sigma^2 \sim \textrm{Gamma}(a, b).
+\end{equation}
+e.g. $\textrm{Gamma}(1, 1)$.
+
+
+## JAGS script for the MLR model
+
+- Need to standardize log(Expenditure) and log(Income). 
+
+-  Also, need to create indicator variables (0 or 1) for each category of the categorical variable, except for the reference category.
+
+```{r message = FALSE, size = "footnotesize"}
+CEData$log_TotalExpSTD <- scale(CEData$log_TotalExp)
+CEData$log_TotalIncomeSTD <- scale(CEData$log_TotalIncome)
+
+library(fastDummies)
+## create indictor variable for Rural
+CEData$Rural = fastDummies::dummy_cols(CEData$UrbanRural)[,names(fastDummies::dummy_cols(CEData$UrbanRural))
+ == ".data_2"]
+```
+
+- Do this for Race as well, 5 indicator variables.
+
+
+```{r message = FALSE, echo = FALSE, size = "footnotesize"}
+## create indicator variables for Black (2), Native American (3), 
+## Asian (4), Pacific Islander (5), and Multi-race (6)
+CEData$Race_Black = fastDummies::dummy_cols(CEData$Race)[,names(fastDummies::dummy_cols(CEData$Race)) == ".data_2"]
+CEData$Race_NA = fastDummies::dummy_cols(CEData$Race)[,names(fastDummies::dummy_cols(CEData$Race)) == ".data_3"]
+CEData$Race_Asian = fastDummies::dummy_cols(CEData$Race)[,names(fastDummies::dummy_cols(CEData$Race)) == ".data_4"]
+CEData$Race_PI = fastDummies::dummy_cols(CEData$Race)[,names(fastDummies::dummy_cols(CEData$Race)) == ".data_5"]
+CEData$Race_M = fastDummies::dummy_cols(CEData$Race)[,names(fastDummies::dummy_cols(CEData$Race)) == ".data_6"]
+```
+
+
+
+## JAGS script for the MLR model cont'd
+
+```{r message = FALSE, size = "footnotesize"}
+modelString <-"
+model {
+## sampling
+for (i in 1:N){
+y[i] ~ dnorm(beta0 + beta1*x_income[i] + beta2*x_rural[i] +
+beta3*x_race_B[i] + beta4*x_race_N[i] +
+beta5*x_race_A[i] + beta6*x_race_P[i] +
+beta7*x_race_M[i], invsigma2)
+}
+## priors
+beta0 ~ dnorm(mu0, g0)
+beta1 ~ dnorm(mu1, g1)
+beta2 ~ dnorm(mu2, g2)
+beta3 ~ dnorm(mu3, g3)
+beta4 ~ dnorm(mu4, g4)
+beta5 ~ dnorm(mu5, g5)
+beta6 ~ dnorm(mu6, g6)
+beta7 ~ dnorm(mu7, g7)
+invsigma2 ~ dgamma(a, b)
+sigma <- sqrt(pow(invsigma2, -1))
+}
+"
+```
+
+
+## JAGS script for the MLR model cont'd
+
+- Pass the data and hyperparameter values to JAGS:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "footnotesize"}
+y = as.vector(CEData$log_TotalExpSTD)
+x_income = as.vector(CEData$log_TotalIncomeSTD)
+x_rural = as.vector(CEData$Rural)
+x_race_B = as.vector(CEData$Race_Black)
+x_race_N = as.vector(CEData$Race_NA)
+x_race_A = as.vector(CEData$Race_Asian)
+x_race_P = as.vector(CEData$Race_PI)
+x_race_M = as.vector(CEData$Race_M)
+N = length(y)  # Compute the number of observations
+```
+
+## JAGS script for the MLR model cont'd
+
+- Pass the data and hyperparameter values to JAGS:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "footnotesize"}
+the_data <- list("y" = y, "x_income" = x_income,
+                 "x_rural" = x_rural, "x_race_B" = x_race_B,
+                 "x_race_N" = x_race_N, "x_race_A" = x_race_A,
+                 "x_race_P" = x_race_P, "x_race_M" = x_race_M,
+                 "N" = N,
+                 "mu0" = 0, "g0" = 1, "mu1" = 0, "g1" = 1,
+                 "mu2" = 0, "g2" = 1, "mu3" = 0, "g3" = 1,
+                 "mu4" = 0, "g4" = 1, "mu5" = 0, "g5" = 1,
+                 "mu6" = 0, "g6" = 1, "mu7" = 0, "g7" = 1,
+                 "a" = 1, "b" = 1)
+```
+
+
+## JAGS script for the MLR model cont'd
+
+
+- Pass the data and hyperparameter values to JAGS:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "footnotesize"}
+initsfunction <- function(chain){
+  .RNG.seed <- c(1,2)[chain]
+  .RNG.name <- c("base::Super-Duper",
+                 "base::Wichmann-Hill")[chain]
+  return(list(.RNG.seed=.RNG.seed,
+              .RNG.name=.RNG.name))
+}
+```
+
+
+## JAGS script for the MLR model cont'd
+
+- Run the JAGS code for this model:
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "footnotesize", results = 'hide'}
+posterior_MLR <- run.jags(modelString,
+                      n.chains = 1,
+                      data = the_data,
+                      monitor = c("beta0", "beta1", "beta2",
+                                  "beta3", "beta4", "beta5",
+                                  "beta6", "beta7", "sigma"),
+                      adapt = 1000,
+                      burnin = 5000,
+                      sample = 5000,
+                      thin = 1,
+                      inits = initsfunction)
+```
+
+
+## JAGS output for the MLR model
+
+
+\vspace{3mm}
+
+```{r message = FALSE, size = "scriptsize", warning = FALSE}
+summary(posterior_MLR)
+```
+
+
+## JAGS output for the MLR model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior_MLR, vars = "beta1")
+```
+
+
+## JAGS output for the MLR model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior_MLR, vars = "beta2")
+```
+
+
+## JAGS output for the MLR model cont'd
+
+```{r fig.height = 3.1, fig.width = 5, fig.align = "center", size = "footnotesize", message = FALSE}
+plot(posterior_MLR, vars = "sigma")
+```
+
+
+## JAGS output for the MLR model cont'd
+
+```{r fig.height = 2.5, fig.width = 2.5, fig.align = "center", size = "footnotesize", message = FALSE}
+post <- as.mcmc(posterior_MLR)
+post %>% as.data.frame %>%
+  gather(parameter, value) -> post2
+ggplot(post2, aes(value)) +
+  geom_density() + facet_wrap(~ parameter, ncol = 3) +
+  theme(strip.text.x = element_text(size=8))
+```
+
+
+## JAGS output for the MLR model cont'd
+
+```{r fig.height = 3, fig.width = 3, fig.align = "center", size = "footnotesize", message = FALSE, echo = FALSE}
+# Add priors to graph
+
+m0 <- the_data$mu0
+m1 <- the_data$mu1
+m2 <- the_data$mu2
+m3 <- the_data$mu3
+m4 <- the_data$mu4
+m5 <- the_data$mu5
+m6 <- the_data$mu6
+m7 <- the_data$mu7
+
+s0 <- 1 / sqrt(the_data$g0)
+s1 <- 1 / sqrt(the_data$g1)
+s2 <- 1 / sqrt(the_data$g2)
+s3 <- 1 / sqrt(the_data$g3)
+s4 <- 1 / sqrt(the_data$g4)
+s5 <- 1 / sqrt(the_data$g5)
+s6 <- 1 / sqrt(the_data$g6)
+s7 <- 1 / sqrt(the_data$g7)
+
+x <- seq(m0 - 3 * s0, m0 + 3 * s0, length.out = 100)
+prior1 <- data.frame(value = x,
+                     density = dnorm(x, m0, s0),
+                     parameter = "beta0")
+x <- seq(m1 - 3 * s1, m1 + 3 * s1, length.out = 100)
+prior2 <- data.frame(value = x,
+                     density = dnorm(x, m1, s1),
+                     parameter = "beta1")
+x <- seq(m2 - 3 * s2, m2 + 3 * s2, length.out = 100)
+prior3 <- data.frame(value = x,
+                     density = dnorm(x, m2, s2),
+                     parameter = "beta2")
+x <- seq(m3 - 3 * s3, m3 + 3 * s3, length.out = 100)
+prior4 <- data.frame(value = x,
+                     density = dnorm(x, m3, s3),
+                     parameter = "beta3")
+x <- seq(m4 - 3 * s4, m4 + 3 * s4, length.out = 100)
+prior5 <- data.frame(value = x,
+                     density = dnorm(x, m4, s4),
+                     parameter = "beta4")
+x <- seq(m5 - 3 * s5, m5 + 3 * s5, length.out = 100)
+prior5 <- data.frame(value = x,
+                     density = dnorm(x, m5, s5),
+                     parameter = "beta5")
+x <- seq(m6 - 3 * s6, m6 + 3 * s6, length.out = 100)
+prior6 <- data.frame(value = x,
+                     density = dnorm(x, m6, s6),
+                     parameter = "beta6")
+x <- seq(m7 - 3 * s7, m7 + 3 * s7, length.out = 100)
+prior7 <- data.frame(value = x,
+                     density = dnorm(x, m7, s7),
+                     parameter = "beta7")
+prior8 <- data.frame(value = x,
+                     density = dgamma(1 / x ^ 2,
+                                      shape = the_data$a,
+                                      rate = the_data$b) * (2 / x ^ 3),
+                     parameter = "sigma")
+
+prior <- rbind(prior1, prior2, prior3, prior4, prior5, prior6, prior7, prior8)
+prior$Type <- "Prior"
+post2$Type <- "Posterior"
+
+ggplot(post2, aes(value)) +
+  geom_density() +
+  geom_line(data = prior, aes(value, density),
+            linetype = 2) +
+  facet_wrap(~ parameter, ncol = 3) +
+  theme(strip.text.x = element_text(size=8))+
+  xlim(-0.5, 1.2) +
+  theme_grey(base_size = 8, base_family = "")
+```
+
+
+## Bayesian inferences with MLR
+
+- Learning about the expected response
+
+- Predictor of future responses
+
+- Posterior predictive checks
+
+- Experiment with several priors to show the impact on the posterior inference
