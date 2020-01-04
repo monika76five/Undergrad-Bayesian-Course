@@ -1,0 +1,319 @@
+---
+title: "Bayesian hierarchical modeling"
+author: "Jingchen (Monika) Hu"
+date: "MATH 347 Bayesian Statistics"
+output:
+  pdf_document: default
+  html_document:
+    number_sections: yes
+institute: Vassar College
+fontsize: 11pt
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(gridExtra)
+require(ProbBayes)
+require(tidyverse)
+require(runjags)
+require(coda)
+crcblue <- "#2905a1"
+knitr::opts_chunk$set(echo = TRUE)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+# Installing the necessary packages
+
+```{r, eval = FALSE}
+install.packages("devtools")
+require(devtools)
+devtools::install_github("bayesball/ProbBayes")
+
+require(ggplot2)
+require(gridExtra)
+require(ProbBayes)
+require(tidyverse)
+crcblue <- "#2905a1"
+```
+
+
+
+# Example: Korean Drama Ratings
+
+## Ratings by Schedule
+
+```{r message = FALSE}
+dramadata = read.csv("KDramaData.csv", header=T)
+
+KBSdrama = dramadata[dramadata$Producer==2,]
+KBSdrama$Schedule = as.factor(KBSdrama$Schedule)
+```
+
+```{r echo = FALSE}
+ggplot(KBSdrama, aes(Rating, color = Schedule)) +
+  geom_density() + labs(title = "Density plot of ratings") + 
+  xlim(0, 0.3) + theme_grey(base_size = 10, base_family = "") 
+```
+
+
+```{r}
+table(KBSdrama$Schedule)
+tapply(KBSdrama$Rating, KBSdrama$Schedule, summary)
+tapply(KBSdrama$Rating, KBSdrama$Schedule, sd)
+```
+
+# Observations in groups: approaches to modeling
+
+# A two-stage prior in a hierarchical model
+
+## The Hierarchical Normal Model
+
+-  The sampling density for group $j$, and $j = 1, \cdots, J$:
+\begin{eqnarray}
+Y_{ij} \overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, {\color{red}\sigma}),
+\end{eqnarray}
+where $i = 1, \cdots, n_j$ and $n_j$ is the number of observations in group $j$. 
+
+- The stage 1 prior distribution for $\mu_j$:
+\begin{eqnarray}
+\mu_j \sim \textrm{Normal}(\mu, \tau).
+\end{eqnarray}
+
+- The stage 2 prior distribution for $\mu_j$:
+\begin{eqnarray}
+\mu, \tau \sim \textrm{g}(\mu, \tau).
+\end{eqnarray}
+
+- The prior distribution for $\sigma$:
+\begin{eqnarray}
+1/\sigma^2 \sim \textrm{Gamma}(\alpha_{\sigma}, \beta_{\sigma}).
+\end{eqnarray}
+
+
+
+## Prior and Hyperprior Specifications
+
+- The stage 1 prior distribution for $\mu_j$:
+\begin{eqnarray}
+\mu_j \sim \textrm{Normal}(\mu, \tau).
+\end{eqnarray}
+
+- The stage 2 prior distribution for $\mu_j$:
+\begin{eqnarray}
+\mu, \tau \sim \textrm{g}(\mu, \tau).
+\end{eqnarray}
+
+- Hyperpriors:
+\begin{eqnarray}
+\mu \mid \mu_0, \gamma_0 &\sim& \textrm{Normal}(\mu_0, \gamma_0),\\
+1/\tau^2 \mid \alpha_{\tau}, \beta_{\tau} &\sim& \textrm{Gamma}(\alpha_{\tau}, \beta_{\tau}).
+\end{eqnarray}
+
+
+- The prior distribution for $\sigma$:
+\begin{eqnarray}
+1/\sigma^2 \sim \textrm{Gamma}(\alpha_{\sigma}, \beta_{\sigma}).
+\end{eqnarray}
+
+
+# MCMC simulation by JAGS
+
+## Recap: Prior and Hyperprior Specifications
+
+- The stage 1 prior distribution for $\mu_j$:
+\begin{eqnarray}
+\mu_j \sim \textrm{Normal}(\mu, \tau).
+\end{eqnarray}
+
+- The stage 2 prior distribution for $\mu_j$:
+\begin{eqnarray}
+\mu, \tau \sim \textrm{g}(\mu, \tau).
+\end{eqnarray}
+
+- Hyperpriors:
+\begin{eqnarray}
+\mu \mid \mu_0, \gamma_0 &\sim& \textrm{Normal}(0.1, 0.5),\\
+1/\tau^2 \mid \alpha_{\tau}, \beta_{\tau} &\sim& \textrm{Gamma}(1, 1).
+\end{eqnarray}
+
+- The prior distribution for $\sigma$:
+\begin{eqnarray}
+1/\sigma^2 \sim \textrm{Gamma}(1, 1).
+\end{eqnarray}
+
+## JAGS Script for the Hierarchical Model
+
+```{r message = FALSE}
+modelString <-"
+model {
+## likelihood
+for (i in 1:N){
+y[i] ~ dnorm(mu_j[schedule[i]], invsigma2)
+}
+
+## priors
+for (j in 1:J){
+mu_j[j] ~ dnorm(mu, invtau2)
+}
+invsigma2 ~ dgamma(a_g, b_g)
+sigma <- sqrt(pow(invsigma2, -1))
+
+## hyperpriors
+mu ~ dnorm(mu0, 1/g0^2)
+invtau2 ~ dgamma(a_t, b_t)
+tau <- sqrt(pow(invtau2, -1))
+}
+"
+```
+
+- Notes about the \texttt{modelString}
+    1. Need a vector of \texttt{mu\_j}, of length \texttt{J}.
+    2. Need a vector of \texttt{schedule}, of length \texttt{N}.
+    3. \texttt{dnorm} takes mean and \textcolor{red}{precision}.
+    4. Work with \texttt{invsigma2}, can return \texttt{sigma}.
+    5. Work with \texttt{invtau2}, can return \texttt{tau}.
+
+- Pass the data and hyperparameter values to JAGS:
+
+```{r message = FALSE}
+y = KBSdrama$Rating   
+schedule = KBSdrama$Schedule  
+N = length(y)  
+J = length(unique(schedule)) 
+
+initsfunction <- function(chain){
+  .RNG.seed <- c(1,2)[chain]
+  .RNG.name <- c("base::Super-Duper",
+                 "base::Wichmann-Hill")[chain]
+  return(list(.RNG.seed=.RNG.seed,
+              .RNG.name=.RNG.name))
+}
+
+the_data <- list("y" = y, "schedule" = schedule, "N" = N, "J" = J, 
+                 "mu0" = 0.1, "g0" = 0.5, 
+                 "a_t" = 1, "b_t" = 1,
+                 "a_g" = 1, "b_g" = 1)
+```
+
+- Run the JAGS code for this model:
+
+```{r message = FALSE, warning = FALSE}
+posterior <- run.jags(modelString,
+                      n.chains = 1,
+                      data = the_data,
+                      monitor = c("mu", "tau", "mu_j", "sigma"),
+                      adapt = 1000,
+                      burnin = 5000,
+                      sample = 5000,
+                      thin = 1, 
+                      inits = initsfunction)
+```
+
+## JAGS Output of the Hierarchical Model
+
+- Obtain posterior summaries of all parameters:
+
+\vspace{3mm}
+
+```{r message = FALSE, warning = FALSE}
+summary(posterior) 
+```
+
+```{r message = FALSE}
+plot(posterior, vars = "mu_j[1]")
+```
+
+
+```{r message = FALSE}
+plot(posterior, vars = "tau")
+```
+
+## Shrinkage/Pooling Effects
+
+```{r message = FALSE, warning = FALSE}
+Ind_Stats = as.data.frame(matrix(NA, J, 2))
+names(Ind_Stats) = c("mean", "sd")
+for (j in 1:J){
+  Ind_Stats[j, ] = c(mean(KBSdrama$Rating[KBSdrama$Schedule == j]), 
+                     sd(KBSdrama$Rating[KBSdrama$Schedule == j]))
+}
+
+Post_Means <- summary(posterior)[, 4]
+
+Means1 <- data.frame(Type = "Sample", Mean = Ind_Stats$mean)
+Means2 <- data.frame(Type = "Hierarchical", Mean =
+                       Post_Means[3:(4 + J - 2)])
+
+Means1$Title <- c("Schedule 1", "Schedule 2", "Schedule 3",
+                  "Schedule 4")
+Means2$Title <- c("Schedule 1", "Schedule 2", "Schedule 3",
+                  "Schedule 4")
+```
+
+
+```{r message = FALSE}
+ggplot(rbind(Means1, Means2), aes(Type, Mean, group=Title)) +
+  geom_line(color = crcblue) + geom_point() +
+  annotate(geom = "text", x = 0.75,
+           y = Means1$Mean + c(0.01, 0.01, 0.01, -0.01), 
+           size = 3, label = Means1$Title) + increasefont(Size = 10)
+```
+
+
+## Sources of Variability
+
+- Two sources of variability in $Y_{ij}$:
+\begin{eqnarray}
+Y_{ij} &\overset{i.i.d.}{\sim} \textrm{Normal}(\mu_j, \sigma) \,\,\, \text{[within-group variability]}\\
+\mu_j \mid \mu, \tau &\sim \textrm{Normal}(\mu, \tau) \,\,\, \text{[between-group variability]} 
+\end{eqnarray} 
+
+
+- To compare these two sources of variability, one can compute the fraction
+\begin{eqnarray}
+R = \frac{\tau^2}{\tau^2 + \sigma^2},
+\end{eqnarray}
+from the posterior draws of $\tau$ and $\sigma$.
+
+
+- The closer the value of $R$ to 1, the higher the between-group variability.
+## Compute and Graph Sources of Variability
+
+- We need the \texttt{coda} R package
+
+```{r eval = FALSE}
+install.packages("coda")
+```
+
+```{r message = FALSE, warning = FALSE}
+require(coda)
+tau_draws <- as.mcmc(posterior, vars = "tau")
+sigma_draws <- as.mcmc(posterior, vars = "sigma")
+R <- tau_draws^2/(tau_draws^2 + sigma_draws^2)
+
+df <- as.data.frame(R)
+
+quantile(R, c(0.025, 0.975))
+```
+
+
+```{r message = FALSE}
+ggplot(df, aes(x=R)) + geom_density() +
+  labs(title="Density of R") +
+  theme(plot.title = element_text(size=15)) +
+  theme(axis.title = element_text(size=15))
+```
+
+
+# Exercise: Hierarchical model with schedule-specific $\mu_j$ and $\sigma_j$
+
+
+
+
+# Recap

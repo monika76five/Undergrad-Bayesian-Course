@@ -1,0 +1,168 @@
+\documentclass[11pt]{article}
+\usepackage[top=2.1cm,bottom=2cm,left=2cm,right= 2cm]{geometry}
+%\geometry{landscape}                % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{changepage}
+\usepackage{lscape}
+\usepackage{ulem}
+\usepackage{multicol}
+\usepackage{dashrule}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\newenvironment{rcases}
+  {\left.\begin{aligned}}
+  {\end{aligned}\right\rbrace}
+
+\newcommand{\urlwofont}[1]{\urlstyle{same}\url{#1}}
+\newcommand{\degree}{\ensuremath{^\circ}}
+\newcommand{\hl}[1]{\textbf{\underline{#1}}}
+
+
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\newenvironment{choices}{
+\begin{enumerate}[(a)]
+}{\end{enumerate}}
+
+%\newcommand{\soln}[1]{\textcolor{MidnightBlue}{\textit{#1}}}	% delete #1 to get rid of solutions for handouts
+\newcommand{\soln}[1]{ \vspace{1.35cm} }
+
+%\newcommand{\solnMult}[1]{\textbf{\textcolor{MidnightBlue}{\textit{#1}}}}	% uncomment for solutions
+\newcommand{\solnMult}[1]{ #1 }	% uncomment for handouts
+
+%\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{black}{(#1)}}} }	% uncomment for handouts
+\newcommand{\pts}[1]{ \textbf{{\footnotesize \textcolor{blue}{(#1)}}} }	% uncomment for handouts
+
+\newcommand{\note}[1]{ \textbf{\textcolor{red}{[#1]}} }	% uncomment for handouts
+
+\begin{document}
+
+
+\enlargethispage{\baselineskip}
+
+Fall 2019 MATH 347 \hfill Jingchen (Monika) Hu\\
+
+\begin{center}
+{\huge Bayesian hierarchical models - derivation notes}	\\
+\end{center}
+\vspace{0.5cm}
+
+The Bayesian hierarchical model for the Kdrama rating application is:
+
+\begin{itemize}
+\item The data model:
+\begin{eqnarray}
+Y_{ij} \mid \mu_j, \sigma &\overset{i.i.d.}{\sim}& {\rm{Normal}}(\mu_j, \sigma), \,\,\, i = 1, \cdots, n_j, j = 1, \cdots J,
+\end{eqnarray}
+where $n_j$ is the number of observations in group $j$, and $J$ is the number of groups.
+
+
+\item The prior distributions:
+\begin{eqnarray}
+\mu_j \mid \mu, \tau &\overset{i.i.d.}{\sim}& {\rm{Normal}}(\mu, \tau) \\
+\mu \mid \mu_0, \gamma_0 &\sim& \textrm{Normal}(\mu_0, \gamma_0) \\
+1/\tau^2 \mid \alpha_{\tau}, \beta_{\tau} &\sim& \textrm{Gamma}(\alpha_{\tau}, \beta_{\tau}) \\
+1/\sigma^2 \mid \alpha_{\sigma}, \beta_{\sigma} &\sim& \textrm{Gamma}(\alpha_{\sigma}, \beta_{\sigma})
+\end{eqnarray}
+
+We give fixed values for hyperparameters: $\mu_0, \gamma_0, \alpha_{\tau}, \beta_{\tau}, \alpha_{\sigma}, \beta_{\sigma}$, therefore we consider them as fixed and known. We also keep them in the conditions.
+
+The parameters in the model includes: $\mu_j$'s, $\sigma, \mu,$ and $\tau$. Therefore, the likelihood function is:
+
+\item The likelihood:
+\begin{eqnarray}
+L(\{\mu_j\}, \sigma, \mu, \tau ) &=& f(Y_{ij}, i = 1, \cdots, n_j, j = 1, \cdots, J \mid \{\mu_j\}, \sigma) \nonumber \\
+&=& \prod_{j=1}^{J}\left(\prod_{i=1}^{n_j} f(Y_{ij} \mid \mu_j, \sigma)\right) \nonumber \\
+&=& \prod_{j=1}^{J}\left(\prod_{i=1}^{n_j} \frac{1}{\sqrt{2\pi\sigma^2}} \textrm{exp}\left(-\frac{(y_{ij} - \mu_j)^2}{2\sigma^2}\right)\right)
+\end{eqnarray}
+
+\item The joint prior distribution:
+\begin{eqnarray}
+\pi(\{\mu_j\}, \sigma, \mu, \tau \mid \mu_0, \gamma_0, \alpha_{\tau}, \beta_{\tau}, \alpha_{\sigma}, \beta_{\sigma}) &=& \prod_{j=1}^{J}(\pi(\mu_j \mid \mu, \tau)) \pi(\mu \mid \mu_0, \gamma_0) \pi(\tau \mid \alpha_{\tau}, \beta_{\tau}) \pi(\sigma \mid \alpha_{\sigma}, \beta_{\sigma}) \nonumber \\
+&=& \prod_{j=1}^{J} \left(\frac{1}{\sqrt{2\pi\tau^2}} \exp\left(-\frac{(\mu_j - \mu)^2}{2\tau^2}\right)\right) \nonumber \\
+&& \left(\frac{1}{\sqrt{2\pi\gamma_0^2}}\exp\left(-\frac{(\mu - \mu_0)^2}{2\gamma_0^2}\right)\right) \nonumber \\
+&& \frac{\beta_{\tau}^{\alpha_{\tau}}}{\Gamma(\alpha_{\tau})}(1/\tau^2)^{\alpha_{\tau} - 1}\exp(-\beta_{\tau}(1/\tau^2)) \nonumber \\
+&& \frac{\beta_{\sigma}^{\alpha_{\sigma}}}{\Gamma(\alpha_{\sigma})}(1/\sigma^2)^{\alpha_{\sigma} - 1}\exp(-\beta_{\sigma}(1/\sigma^2))
+\end{eqnarray}
+
+(We work with $1/\tau^2$ and $1/\sigma^2$ instead of $\tau$ and $\sigma$.)
+
+With these pieces, we can express the joint posterior distribution using Bayes' theorem.
+
+\item The joint posterior distribution:
+\begin{eqnarray}
+\pi(\{\mu_j\}, \sigma, \mu, \tau \mid \{y_{ij}\}, \mu_0, \gamma_0, \alpha_{\tau}, \beta_{\tau}, \alpha_{\sigma}, \beta_{\sigma}) &\propto& \pi(\{\mu_j\}, \sigma, \mu, \tau \mid \mu_0, \gamma_0, \alpha_{\tau}, \beta_{\tau}, \alpha_{\sigma}, \beta_{\sigma}) L(\{\mu_j\}, \sigma, \mu, \tau) \nonumber \\
+&\propto& \prod_{j=1}^{J}\left(\prod_{i=1}^{n_j} \frac{1}{\sqrt{2\pi\sigma^2}} \textrm{exp}\left(-\frac{(y_{ij} - \mu_j)^2}{2\sigma^2}\right)\right) \nonumber \\
+&&\prod_{j=1}^{J} \left(\frac{1}{\sqrt{2\pi\tau^2}} \exp\left(-\frac{(\mu_j - \mu)^2}{2\tau^2}\right)\right) \nonumber \\
+&& \left(\frac{1}{\sqrt{2\pi\gamma_0^2}}\exp\left(-\frac{(\mu - \mu_0)^2}{2\gamma_0^2}\right)\right) \nonumber \\
+&& \frac{\beta_{\tau}^{\alpha_{\tau}}}{\Gamma(\alpha_{\tau})}(1/\tau^2)^{\alpha_{\tau} - 1}\exp(-\beta_{\tau}(1/\tau^2)) \nonumber \\
+&& \frac{\beta_{\sigma}^{\alpha_{\sigma}}}{\Gamma(\alpha_{\sigma})}(1/\sigma^2)^{\alpha_{\sigma} - 1}\exp(-\beta_{\sigma}(1/\sigma^2))
+\end{eqnarray}
+
+Next, to derive the full conditional posterior distribution for each parameter, we collect terms only related to the parameter we are working with in Equation (8). Other terms, either constants or terms related to other parameters, are considered given.
+
+\item The full conditional posterior distribution for $\mu$:
+\begin{eqnarray}
+\pi(\mu \mid -) &\propto& \exp\left(-\frac{\sum_{j=1}^{J}(\mu_j - \mu)^2}{2\tau^2}\right) \exp\left(-\frac{(\mu - \mu_0)^2}{2\gamma_0^2}\right) \nonumber \\
+&\propto& \exp\left(-\frac{J\mu^2 - 2\mu \sum_{j=1}^{J}\mu_j}{2\tau^2}\right)\exp\left(-\frac{\mu^2 - 2\mu\mu_0}{2\gamma_0^2}\right) \nonumber \\
+&=& \exp\left(-\frac{1}{2}\left(\left(\frac{J}{\tau^2} + \frac{1}{\gamma_0^2}\right)\mu^2 - \left(\frac{2\sum_{j=1}^{J}\mu_j}{\tau^2} + \frac{2\mu_0}{\gamma_0^2}\right)\mu\right)\right)
+\end{eqnarray}
+
+That is, 
+\begin{equation}
+\mu \mid - \sim \textrm{Normal}\left(\frac{\sum_{j=1}^{J}\mu_j/\tau^2 + \mu_0/\gamma_0^2}{J/\tau^2 + 1/\gamma_0^2}, (J/\tau^2 + 1/\gamma_0^2)^{-1/2} \right).
+\end{equation}
+
+
+\item The full conditional posterior distribution for $1/\tau^2$:
+\begin{eqnarray}
+\pi(1/\tau^2 \mid -) &\propto& \prod_{j=1}^{J}(1/\tau^2)^{\frac{1}{2}}\exp\left(-\frac{\sum_{j=1}^{J}(\mu_j - \mu)^2}{2\tau^2}\right)(1/\tau^2)^{\alpha_{\tau}-1}\exp(-\beta_{\tau}(1/\tau^2)) \nonumber \\
+&=& (1/\tau^2)^{\frac{J}{2}}\exp\left(-\frac{\sum_{j=1}^{J}(\mu_j - \mu)^2}{2}(1/\tau^2)\right)(1/\tau^2)^{\alpha_{\tau}-1}\exp(-\beta_{\tau}(1/\tau^2)) \nonumber \\
+&=& (1/\tau^2)^{\frac{J}{2} + \alpha_{\tau} - 1} \exp\left(-\left(\frac{\sum_{j=1}^{J}(\mu_j - \mu)^2}{2} + \beta_{\tau}\right) (1/\tau^2)\right)
+\end{eqnarray}
+
+That is,
+\begin{equation}
+1/\tau^2 \mid - \sim \textrm{Gamma}\left(\alpha_{\tau} + \frac{J}{2}, \beta_{\tau} + \frac{1}{2}\sum_{j=1}^{J}(\mu_j - \mu)^2\right).
+\end{equation}
+
+
+\item The full conditional distribution for $\mu_j$:
+\begin{eqnarray}
+\pi(\mu_j \mid -) &\propto&  \prod_{i=1}^{n_j} \exp\left(-\frac{(y_{ij}-\mu_j)^2}{2\sigma^2}\right)\exp\left(-\frac{(\mu_j-\mu)^2}{2\tau^2}\right) \nonumber \\
+&=&\exp\left(-\frac{\sum_{i=1}^{n_j}(y_{ij}-\mu_j)^2}{2\sigma^2}\right)\exp\left(-\frac{(\mu_j-\mu)^2}{2\tau^2}\right) \nonumber \\
+&\propto& \exp\left(-\frac{n_j\mu_j^2 - 2\mu_j \sum_{i=1}^{n_j}y_{ij}}{2\sigma^2}\right)\exp\left(-\frac{\mu_j^2 - 2\mu_j\mu}{2\tau^2}\right) \nonumber \\
+&=& \exp\left(-\frac{1}{2}\left(\left(\frac{n_j}{\sigma^2}+\frac{1}{\tau^2}\right)\mu_j^2 - \left(\frac{2\sum_{i=1}^{n_j}y_{ij}}{\sigma^2} + \frac{2\mu}{\tau^2}\right)\mu_j\right)\right)
+\end{eqnarray}
+
+That is,
+\begin{equation}
+\mu_j \mid - \sim \textrm{Normal}\left(\frac{\sum_{i=1}^{n_j}y_{ij}/\sigma^2 + \mu/\tau^2}{n_j/\sigma^2 + 1/\tau^2}, (n_j/\sigma^2 + 1/\tau^2)^{-1/2}\right).
+\end{equation}
+
+
+\item The full conditional distribution for $\sigma$:
+\begin{eqnarray}
+\pi(1/\sigma^2 \mid -) &\propto& \left(\prod_{j=1}^{J}\prod_{i=1}^{n_j}(1/\sigma^2)^{\frac{1}{2}}\right)\left(\prod_{j=1}^{J}\prod_{i=1}^{n_j}\exp\left(-\frac{(y_{ij} - \mu_j)^2}{2\sigma^2}\right)\right) \nonumber \\
+&&(1/\sigma^2)^{\alpha_{\sigma}-1} \exp(-\beta_{\sigma}(1/\sigma^2)) \nonumber \\
+&=&(1/\sigma^2)^{\frac{\sum_{j=1}^{J}n_j}{2}} \exp\left(-(1/\sigma^2)\frac{1}{2}\sum_{j=1}^{J}\sum_{i=1}^{n_j}(y_{ij}-\mu_j)^2\right)\nonumber \\
+&&(1/\sigma^2)^{\alpha_{\sigma}-1} \exp(-\beta_{\sigma}(1/\sigma^2)) \nonumber \\
+&=&(1/\sigma^2)^{\alpha_{\sigma} + \sum_{j=1}^{J}n_j/2 - 1} \exp\left(-(1/\sigma^2)\left(\beta_{\sigma} + \frac{1}{2}\sum_{j=1}^{J}\sum_{i=1}^{n_j}(y_{ij}-\mu_j)^2\right)\right)
+\end{eqnarray}
+
+That is,
+\begin{equation}
+1/\sigma^2 \sim \textrm{Gamma}\left(\alpha_{\sigma} + \sum_{j=1}^{J}\frac{n_j}{2}, \beta_{\sigma} + \frac{1}{2}\sum_{j=1}^{J}\sum_{i=1}^{n_j}(y_{ij}-\mu_j)^2\right).
+\end{equation}
+\end{itemize}
+
+
+\end{document} 
