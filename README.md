@@ -45,4 +45,4 @@
     
     - Case Studies folder: case study files.
     
-    - Lecture recordings available at [this growing YouTube playlist](https://www.youtube.com/playlist?list=PL_lWxa4iVNt1TfbsAfv9aW_5KL9rZuAtr).
+    - Lecture recordings available at [this complete YouTube playlist](https://www.youtube.com/playlist?list=PL_lWxa4iVNt1TfbsAfv9aW_5KL9rZuAtr).
