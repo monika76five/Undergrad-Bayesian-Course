@@ -10,6 +10,10 @@
 
     - The ProbBayes R package
         - Installing from [CRAN link](https://cran.r-project.org/web/packages/ProbBayes/index.html)
+        ```{r, eval = FALSE}
+        install.packages("ProbBayes")
+        library(ProbBayes)
+        ```
         
         - Installing from Github
         ```{r, eval = FALSE}
