@@ -9,7 +9,7 @@
 - Computing resources
 
     - The ProbBayes R package
-        - Installing from [CRAN link](https://cran.r-project.org/web/packages/ProbBayes/index.html)
+        - Installing from CRAN link
         ```{r, eval = FALSE}
         install.packages("ProbBayes")
         library(ProbBayes)
