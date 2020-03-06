@@ -9,11 +9,13 @@
 - Computing resources
 
     - The ProbBayes R package
-    
-    ```{r, eval = FALSE}
-    devtools::install_github("bayesball/ProbBayes")
-    require(ProbBayes)
-    ```
+        - Installing from [CRAN link](https://cran.r-project.org/web/packages/ProbBayes/index.html)
+        
+        - Installing from Github
+        ```{r, eval = FALSE}
+        devtools::install_github("bayesball/ProbBayes")
+        require(ProbBayes)
+        ```
     
     - JAGS (Just Another Gibbs Sampler)
     
